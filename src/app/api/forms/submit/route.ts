@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
         spreadsheetId: form.spreadsheetId,
         range: 'A:Z',
         valueInputOption: 'RAW',
+        // Ensure new submissions insert rows instead of overwriting existing rows
+        insertDataOption: 'INSERT_ROWS',
         requestBody: {
           values: [rowData],
         },
