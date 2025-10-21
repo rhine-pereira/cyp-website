@@ -102,6 +102,7 @@ export default function FormBuilder() {
   const saveForm = async () => {
     setIsSaving(true);
     try {
+      console.log('Saving form with fields:', form.fields);
       const response = await fetch('/api/forms/save', {
         method: 'POST',
         headers: {

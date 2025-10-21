@@ -96,6 +96,26 @@ export default function FormPreview({ form }: FormPreviewProps) {
           </div>
         );
       
+      case 'admin-image':
+        return (
+          <div key={field.id} className="space-y-2">
+            {field.imageUrl ? (
+              <div className="text-center">
+                <img
+                  src={field.imageUrl}
+                  alt={field.label}
+                  className="max-w-full h-auto mx-auto rounded-lg border"
+                />
+                <p className="text-sm text-gray-600 mt-2">{field.label}</p>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <p className="text-gray-500">No image uploaded</p>
+              </div>
+            )}
+          </div>
+        );
+      
       default:
         return (
           <input
@@ -130,10 +150,12 @@ export default function FormPreview({ form }: FormPreviewProps) {
       <form className="space-y-6">
         {form.fields.map((field) => (
           <div key={field.id} className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              {field.label}
-              {field.required && <span className="text-red-500 ml-1">*</span>}
-            </label>
+            {field.type !== 'admin-image' && (
+              <label className="block text-sm font-medium text-gray-700">
+                {field.label}
+                {field.required && <span className="text-red-500 ml-1">*</span>}
+              </label>
+            )}
             {renderField(field)}
             {field.validation && (
               <div className="text-xs text-gray-500">

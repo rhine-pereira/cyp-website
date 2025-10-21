@@ -30,9 +30,10 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
         if (value instanceof FileList && value.length > 0) {
           const file = value[0];
           if (file.type.startsWith('image/')) {
-            // Upload image to Firebase Storage
+            // Upload image to Appwrite Storage
             const uploadFormData = new FormData();
             uploadFormData.append('file', file);
+            uploadFormData.append('isAdminUpload', 'false');
             
             const uploadResponse = await fetch('/api/upload', {
               method: 'POST',
@@ -189,6 +190,28 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
           </div>
         );
       
+      case 'admin-image':
+        console.log('Rendering admin-image field in submission:', field);
+        return (
+          <div className="space-y-2">
+            {field.imageUrl ? (
+              <div className="text-center">
+                <img
+                  src={field.imageUrl}
+                  alt={field.label}
+                  className="max-w-full h-auto mx-auto rounded-lg border"
+                />
+                <p className="text-sm text-gray-600 mt-2">{field.label}</p>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <p className="text-gray-500">No image available</p>
+                <p className="text-xs text-gray-400 mt-1">Field ID: {field.id}</p>
+              </div>
+            )}
+          </div>
+        );
+      
       default:
         return (
           <input
@@ -251,10 +274,12 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {form.fields.map((field) => (
             <div key={field.id} className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                {field.label}
-                {field.required && <span className="text-red-500 ml-1">*</span>}
-              </label>
+              {field.type !== 'admin-image' && (
+                <label className="block text-sm font-medium text-gray-700">
+                  {field.label}
+                  {field.required && <span className="text-red-500 ml-1">*</span>}
+                </label>
+              )}
               {renderField(field)}
               {errors[field.id] && (
                 <p className="text-sm text-red-600">{errors[field.id]?.message}</p>

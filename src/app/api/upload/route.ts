@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { storage } from '@/app/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage, ID } from '@/app/lib/appwrite';
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const isAdminUpload = formData.get('isAdminUpload') === 'true';
     
     if (!file) {
       return NextResponse.json(
@@ -30,26 +30,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create a unique filename
-    const timestamp = Date.now();
-    const filename = `form-images/${timestamp}_${file.name}`;
-    
-    // Upload to Firebase Storage
-    const storageRef = ref(storage, filename);
+    // Read file bytes
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
+
+    // Upload to Appwrite Storage
+    const bucketId = process.env.APPWRITE_BUCKET_ID as string;
     
-    const snapshot = await uploadBytes(storageRef, uint8Array, {
-      contentType: file.type,
-    });
-    
-    // Get download URL
-    const downloadURL = await getDownloadURL(snapshot.ref);
-    
+    if (!bucketId) {
+      return NextResponse.json(
+        { success: false, error: 'Storage bucket not configured' },
+        { status: 500 }
+      );
+    }
+
+    const uploaded = await storage.createFile(
+      bucketId,
+      ID.unique(),
+      file
+    );
+
+    // Build a public view URL
+    const endpoint = process.env.APPWRITE_ENDPOINT as string;
+    const projectId = process.env.APPWRITE_PROJECT_ID as string;
+    const fileId = uploaded.$id;
+    const viewUrl = `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`;
+
     return NextResponse.json({
       success: true,
-      url: downloadURL,
-      filename: filename,
+      url: viewUrl,
+      fileId,
+      bucketId,
+      isAdminUpload,
     });
     
   } catch (error) {

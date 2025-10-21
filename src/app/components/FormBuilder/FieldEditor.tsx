@@ -31,6 +31,47 @@ export default function FieldEditor({ field, onUpdate, onDelete }: FieldEditorPr
     updateField({ options: newOptions });
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('isAdminUpload', 'true');
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        updateField({ imageUrl: result.url });
+      } else {
+        alert(`Failed to upload image: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image');
+    }
+  };
+
+  const removeImage = () => {
+    updateField({ imageUrl: undefined });
+  };
+
   const fieldTypes = [
     { value: 'text', label: 'Text' },
     { value: 'email', label: 'Email' },
@@ -46,7 +87,8 @@ export default function FieldEditor({ field, onUpdate, onDelete }: FieldEditorPr
     { value: 'time', label: 'Time' },
     { value: 'datetime-local', label: 'DateTime' },
     { value: 'file', label: 'File' },
-    { value: 'image', label: 'Image' },
+    { value: 'image', label: 'Image Upload' },
+    { value: 'admin-image', label: 'Display Image (Admin)' },
   ];
 
   return (
@@ -121,6 +163,46 @@ export default function FieldEditor({ field, onUpdate, onDelete }: FieldEditorPr
             Required field
           </label>
         </div>
+
+        {/* Image upload for admin-image */}
+        {field.type === 'admin-image' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Upload Image
+            </label>
+            {field.imageUrl ? (
+              <div className="space-y-2">
+                <img
+                  src={field.imageUrl}
+                  alt="Uploaded image"
+                  className="w-full h-32 object-cover rounded-lg border"
+                />
+                <button
+                  onClick={removeImage}
+                  className="text-sm text-red-600 hover:text-red-800"
+                >
+                  Remove Image
+                </button>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <label
+                  htmlFor="image-upload"
+                  className="cursor-pointer text-sm text-gray-600 hover:text-gray-800"
+                >
+                  Click to upload image (QR code, logo, etc.)
+                </label>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Options for select, radio, checkbox */}
         {(field.type === 'select' || field.type === 'radio' || field.type === 'checkbox') && (
