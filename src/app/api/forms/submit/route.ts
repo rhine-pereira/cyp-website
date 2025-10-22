@@ -48,9 +48,10 @@ export async function POST(request: NextRequest) {
           if (Array.isArray(value)) {
             return value.join(', ');
           }
-          // For image fields, show a clickable link if it's a URL
-          if (field.type === 'image' && value && typeof value === 'string' && value.startsWith('http')) {
-            return `=HYPERLINK("${value}", "View Image")`;
+          // For image and file fields, show a clickable link if it's a URL
+          if ((field.type === 'image' || field.type === 'file') && value && typeof value === 'string' && value.startsWith('http')) {
+            const label = field.type === 'file' ? 'View File' : 'View Image';
+            return `=HYPERLINK("${value}", "${label}")`;
           }
           return value || '';
         }),

@@ -22,11 +22,18 @@ export default function FormsPage() {
         const formsData: FormLayout[] = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
+          const normalizeDate = (val: any): Date => {
+            if (!val) return new Date();
+            if (typeof val?.toDate === 'function') return val.toDate();
+            if (val instanceof Date) return val;
+            const d = new Date(val);
+            return isNaN(d.getTime()) ? new Date() : d;
+          };
           formsData.push({
             id: doc.id,
             ...data,
-            createdAt: data.createdAt?.toDate() || new Date(),
-            updatedAt: data.updatedAt?.toDate() || new Date(),
+            createdAt: normalizeDate(data.createdAt),
+            updatedAt: normalizeDate(data.updatedAt),
           } as FormLayout);
         });
         

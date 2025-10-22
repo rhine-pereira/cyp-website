@@ -25,11 +25,18 @@ export default function FormSubmissionPage() {
         
         if (formSnap.exists()) {
           const data = formSnap.data();
+          const normalizeDate = (val: any): Date => {
+            if (!val) return new Date();
+            if (typeof val?.toDate === 'function') return val.toDate();
+            if (val instanceof Date) return val;
+            const d = new Date(val);
+            return isNaN(d.getTime()) ? new Date() : d;
+          };
           setForm({
             id: formSnap.id,
             ...data,
-            createdAt: data.createdAt?.toDate() || new Date(),
-            updatedAt: data.updatedAt?.toDate() || new Date(),
+            createdAt: normalizeDate(data.createdAt),
+            updatedAt: normalizeDate(data.updatedAt),
           } as FormLayout);
         } else {
           setError('Form not found');

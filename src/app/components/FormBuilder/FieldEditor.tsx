@@ -136,19 +136,21 @@ export default function FieldEditor({ field, onUpdate, onDelete }: FieldEditorPr
           />
         </div>
 
-        {/* Placeholder */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Placeholder
-          </label>
-          <input
-            type="text"
-            value={field.placeholder || ''}
-            onChange={(e) => updateField({ placeholder: e.target.value })}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500"
-            placeholder="Enter placeholder text"
-          />
-        </div>
+        {/* Placeholder (not used for select, radio, checkbox) */}
+        {!(field.type === 'select' || field.type === 'radio' || field.type === 'checkbox') && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Placeholder
+            </label>
+            <input
+              type="text"
+              value={field.placeholder || ''}
+              onChange={(e) => updateField({ placeholder: e.target.value })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500"
+              placeholder="Enter placeholder text"
+            />
+          </div>
+        )}
 
         {/* Required */}
         <div className="flex items-center">

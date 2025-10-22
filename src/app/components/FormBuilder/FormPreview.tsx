@@ -48,7 +48,6 @@ export default function FormPreview({ form }: FormPreviewProps) {
             className={`${baseClasses} bg-white`}
             disabled
           >
-            <option value="">{field.placeholder || 'Select an option'}</option>
             {field.options?.map((option, index) => (
               <option key={index} value={option}>{option}</option>
             ))}

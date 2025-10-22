@@ -8,7 +8,8 @@ import { auth } from '@/app/lib/firebase';
 // Hardcoded allowed emails
 const ALLOWED_EMAILS = [
   'rhine.pereira@gmail.com', // Replace with your actual email
-  'admin@cyp.com', // Add more admin emails as needed
+  'admin@cyp.com',
+   // Add more admin emails as needed
 ];
 
 interface AuthGuardProps {

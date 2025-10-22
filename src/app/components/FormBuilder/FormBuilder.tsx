@@ -1,15 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FormLayout, FormField } from '@/app/types/form';
 import FieldEditor from './FieldEditor';
 import FormPreview from './FormPreview';
 import { Plus, Save, Eye, EyeOff, Upload, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export default function FormBuilder() {
+interface FormBuilderProps {
+  initialForm?: FormLayout;
+}
+
+export default function FormBuilder({ initialForm }: FormBuilderProps) {
   const router = useRouter();
-  const [form, setForm] = useState<FormLayout>({
+  const [form, setForm] = useState<FormLayout>(initialForm ?? {
     id: '',
     title: 'New Form',
     description: '',
@@ -17,12 +21,20 @@ export default function FormBuilder() {
     createdAt: new Date(),
     updatedAt: new Date(),
   });
+
+  useEffect(() => {
+    if (initialForm) {
+      setForm(initialForm);
+      setImagePreview(initialForm.imageUrl ?? null);
+    }
+  }, [initialForm]);
   
   const [showPreview, setShowPreview] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const addField = (type: FormField['type'] = 'text') => {
     const newField: FormField = {
@@ -105,7 +117,9 @@ export default function FormBuilder() {
     setIsSaving(true);
     try {
       console.log('Saving form with fields:', form.fields);
-      const response = await fetch('/api/forms/save', {
+      const isEdit = Boolean(form.id);
+      const url = isEdit ? '/api/forms/update' : '/api/forms/save';
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -116,23 +130,28 @@ export default function FormBuilder() {
       const result = await response.json();
 
       if (result.success) {
-        setForm(prev => ({ ...prev, id: result.formId }));
-        alert(`Form saved successfully!\n\nForm ID: ${result.formId}\nSpreadsheet: ${result.spreadsheetUrl}`);
+        if (isEdit) {
+          alert('Form updated successfully!');
+          router.push('/admin/forms');
+        } else {
+          setForm(prev => ({ ...prev, id: result.formId }));
+          alert(`Form saved successfully!\n\nForm ID: ${result.formId}\nSpreadsheet: ${result.spreadsheetUrl}`);
 
-        // Reset builder state
-        setForm({
-          id: '',
-          title: 'New Form',
-          description: '',
-          fields: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-        setImageFile(null);
-        setImagePreview(null);
+          // Reset builder state
+          setForm({
+            id: '',
+            title: 'New Form',
+            description: '',
+            fields: [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          setImageFile(null);
+          setImagePreview(null);
 
-        // Redirect to Manage Forms
-        router.push('/admin/forms');
+          // Redirect to Manage Forms
+          router.push('/admin/forms');
+        }
       } else {
         throw new Error(result.error || 'Failed to save form');
       }
@@ -264,6 +283,21 @@ export default function FormBuilder() {
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
+                  draggable
+                  onDragStart={() => setDragIndex(index)}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                  }}
+                  onDrop={() => {
+                    if (dragIndex === null || dragIndex === index) return;
+                    setForm(prev => {
+                      const newFields = [...prev.fields];
+                      const [moved] = newFields.splice(dragIndex, 1);
+                      newFields.splice(index, 0, moved);
+                      return { ...prev, fields: newFields };
+                    });
+                    setDragIndex(null);
+                  }}
                 >
                   <div className="flex justify-between items-center">
                     <div 

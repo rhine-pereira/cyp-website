@@ -23,11 +23,18 @@ export default function FormsManagementPage() {
         const formsData: FormLayout[] = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
+          const normalizeDate = (val: any): Date => {
+            if (!val) return new Date();
+            if (typeof val?.toDate === 'function') return val.toDate();
+            if (val instanceof Date) return val;
+            const d = new Date(val);
+            return isNaN(d.getTime()) ? new Date() : d;
+          };
           formsData.push({
             id: doc.id,
             ...data,
-            createdAt: data.createdAt?.toDate() || new Date(),
-            updatedAt: data.updatedAt?.toDate() || new Date(),
+            createdAt: normalizeDate(data.createdAt),
+            updatedAt: normalizeDate(data.updatedAt),
           } as FormLayout);
         });
         
@@ -195,6 +202,12 @@ export default function FormsManagementPage() {
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     Preview
+                  </Link>
+                  <Link
+                    href={`/admin/forms/${form.id}/edit`}
+                    className="px-3 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 text-sm"
+                  >
+                    Edit
                   </Link>
                   <button
                     onClick={() => handleDeleteForm(form.id)}

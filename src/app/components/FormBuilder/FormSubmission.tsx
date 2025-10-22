@@ -49,26 +49,25 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
       for (const [key, value] of Object.entries(data)) {
         if (value instanceof FileList && value.length > 0) {
           const file = value[0];
-          if (file.type.startsWith('image/')) {
-            // Upload image to Appwrite Storage
-            const uploadFormData = new FormData();
-            uploadFormData.append('file', file);
-            uploadFormData.append('isAdminUpload', 'false');
-            
-            const uploadResponse = await fetch('/api/upload', {
-              method: 'POST',
-              body: uploadFormData,
-            });
-            
-            const uploadResult = await uploadResponse.json();
-            
-            if (uploadResult.success) {
-              processedData[key] = uploadResult.url;
-            } else {
-              throw new Error(`Failed to upload image: ${uploadResult.error}`);
-            }
+          // Upload any file to Appwrite Storage
+          const uploadFormData = new FormData();
+          uploadFormData.append('file', file);
+          uploadFormData.append('isAdminUpload', 'false');
+          const fieldMeta = form.fields.find(f => f.id === key);
+          const uploadType = fieldMeta?.type === 'image' ? 'image' : 'file';
+          uploadFormData.append('uploadType', uploadType);
+
+          const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: uploadFormData,
+          });
+
+          const uploadResult = await uploadResponse.json();
+
+          if (uploadResult.success) {
+            processedData[key] = uploadResult.url;
           } else {
-            processedData[key] = file.name; // Store filename for non-image files
+            throw new Error(`Failed to upload file: ${uploadResult.error}`);
           }
         } else if (Array.isArray(value)) {
           processedData[key] = value.join(', ');
@@ -139,7 +138,6 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
             })}
             className={`${fieldClasses} bg-white`}
           >
-            <option value="">{field.placeholder || 'Select an option'}</option>
             {field.options?.map((option: string, index: number) => (
               <option key={index} value={option}>{option}</option>
             ))}

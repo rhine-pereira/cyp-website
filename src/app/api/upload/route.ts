@@ -6,6 +6,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const isAdminUpload = formData.get('isAdminUpload') === 'true';
+    const uploadType = (formData.get('uploadType') as string) || 'file'; // 'image' | 'file'
     
     if (!file) {
       return NextResponse.json(
@@ -14,10 +15,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    // Conditionally validate file type
+    if (uploadType === 'image' && !file.type.startsWith('image/')) {
       return NextResponse.json(
-        { success: false, error: 'Only image files are allowed' },
+        { success: false, error: 'Only image files are allowed for this field' },
         { status: 400 }
       );
     }
