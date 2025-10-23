@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FormLayout } from '@/app/types/form';
 import { useForm } from 'react-hook-form';
+import { Button } from '@/app/components/ui/button';
+import { motion } from 'framer-motion';
 
 interface FormSubmissionProps {
   form: FormLayout;
@@ -24,12 +26,12 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
     const splitRegex = /(https?:\/\/[^\s]+)/g; // for splitting only
     const parts = text.split(splitRegex);
     return (
-      <div className="text-gray-600 whitespace-pre-line">
+      <div className="whitespace-pre-line text-slate-700">
         {parts.map((part, idx) => {
           const isUrl = /^https?:\/\/\S+$/i.test(part);
           if (isUrl) {
             return (
-              <a key={idx} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline break-words">
+              <a key={idx} href={part} target="_blank" rel="noopener noreferrer" className="break-words text-sky-700 underline hover:text-sky-800">
                 {part}
               </a>
             );
@@ -160,7 +162,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
   }, [errors]);
 
   const renderField = (field: any) => {
-    const baseClasses = "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500";
+    const baseClasses = "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 placeholder-slate-500";
     const errorClasses = "border-red-500 focus:ring-red-500";
     
     const fieldClasses = errors[field.id] ? `${baseClasses} ${errorClasses}` : baseClasses;
@@ -211,7 +213,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
                   })}
                   type="radio"
                   value={option}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300"
                 />
                 <span className="ml-2 text-sm text-gray-700">{option}</span>
               </label>
@@ -230,7 +232,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
                   })}
                   type="checkbox"
                   value={option}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded"
                 />
                 <span className="ml-2 text-sm text-gray-700">{option}</span>
               </label>
@@ -245,7 +247,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
               required: field.required ? `${field.label} is required` : false,
             })}
             type="file"
-            className={`${fieldClasses} file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100`}
+            className={`${fieldClasses} file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100`}
           />
         );
       
@@ -258,7 +260,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
               })}
               type="file"
               accept="image/*"
-              className={`${fieldClasses} file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100`}
+              className={`${fieldClasses} file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100`}
             />
             <p className="text-xs text-gray-500">Upload an image file (JPG, PNG, GIF)</p>
           </div>
@@ -316,8 +318,8 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
 
   if (submitStatus === 'success') {
     return (
-      <div className="max-w-2xl mx-auto p-6">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+      <div className="mx-auto max-w-2xl p-6">
+        <div className="rounded-lg border border-green-200 bg-green-50 p-6 text-center">
           <div className="text-green-600 text-6xl mb-4">✓</div>
           <h2 className="text-2xl font-bold text-green-800 mb-2">Form Submitted Successfully!</h2>
           <p className="text-green-700">Thank you for your submission.</p>
@@ -327,8 +329,8 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+    <div className="mx-auto max-w-2xl p-6">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         {/* Header image on top */}
         {form.imageUrl && (
           <div className="mb-4">
@@ -342,11 +344,11 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
           </div>
         )}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{form.title}</h1>
+          <h1 className="mb-2 text-3xl font-bold text-slate-900">{form.title}</h1>
           {form.description && linkify(form.description)}
         </div>
         {form.acceptingResponses === false ? (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800">
             This form is no longer accepting responses.
           </div>
         ) : (
@@ -373,13 +375,9 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
           )}
           
           <div className="pt-4">
-            <button
-              type="submit"
-              disabled={isSubmitting || !isValid}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <Button type="submit" disabled={isSubmitting || !isValid} className="h-11 w-full bg-sky-600 text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50">
               {isSubmitting ? 'Submitting...' : 'Submit Form'}
-            </button>
+            </Button>
           </div>
         </form>
         )}

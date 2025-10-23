@@ -1,178 +1,232 @@
 'use client';
 
-import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
-import { FaInstagram, FaYoutube } from "react-icons/fa";
+import Image from 'next/image';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { Poppins } from 'next/font/google';
+import { Button } from '@/app/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { Separator } from '@/app/components/ui/separator';
+import { FaInstagram, FaYoutube } from 'react-icons/fa';
+
+const poppins = Poppins({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
 const images = [
-    "bangloreputreach.jpeg",
-    "beachfellowship.jpeg",
-    "borivalioutreach.jpeg",
-    "camp2025.jpg",
-    "christmasfellowship.jpeg",
-    "feb_recollection.jpeg",
-    "fellowship.jpeg",
-    "k24.jpeg",
-    "nvrecollec.jpeg",
-    "orpahnagenv.jpeg",
-    "soprts.jpeg",
+  { src: '/bangloreputreach.jpeg', label: 'Bangalore Outreach' },
+  { src: '/beachfellowship.jpeg', label: 'Beach Fellowship' },
+  { src: '/borivalioutreach.jpeg', label: 'Borivali Outreach' },
+  { src: '/camp2025.jpg', label: 'Camp 2025' },
+  { src: '/christmasfellowship.jpeg', label: 'Christmas Fellowship' },
+  { src: '/feb_recollection.jpeg', label: 'February Recollection' },
+  { src: '/fellowship.jpeg', label: 'Fellowship' },
+  { src: '/k24.jpeg', label: 'K24' },
+  { src: '/nvrecollec.jpeg', label: 'NV Recollection' },
+  { src: '/orpahnagenv.jpeg', label: 'Orphanage NV' },
+  { src: '/soprts.jpeg', label: 'Sports' },
 ];
 
-const imageInfo = [
-    "Bangalore Outreach",
-    "Beach Fellowship",
-    "Borivali Outreach",
-    "Camp 2025",
-    "Christmas Fellowship",
-    "February Recollection",
-    "Fellowship",
-    "K24",
-    "NV Recollection",
-    "Orphanage NV",
-    "Sports",
-];
+export default function HomePage() {
+  return (
+    <main className={poppins.className}>
+      <section className="relative isolate overflow-hidden bg-gradient-to-b from-amber-50 via-white to-sky-50">
+        <div className="absolute inset-0">
+          <Image
+            src="/camp2025.jpg"
+            alt="CYP Camp 2025"
+            fill
+            className="object-cover brightness-[1.1] saturate-[1.1]"
+            loading="eager"
+            quality={90}
+            sizes="100vw"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/60" />
+        </div>
+        <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-24">
+          <div className="max-w-3xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <h1 className="text-3xl font-extrabold tracking-tight text-white drop-shadow sm:text-5xl">
+                Christian Youth in Power
+                
+              </h1>
+              <p className="mt-3 text-base text-slate-100 drop-shadow sm:mt-4 sm:text-lg">
+                A Youth Outreach of The Community of the Good Shepherd.
+              </p>
+              <div className="pt-8">
+                <Button
+                  asChild
+                  size="lg"
+                  className="w-fit bg-amber-400 text-slate-900 hover:bg-amber-500 shadow-lg ring-1 ring-white/60"
+                >
+                  <Link href="/join" aria-label="Get involved with Christian Youth in Power">
+                    Get Involved Today
+                  </Link>
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
 
-export default function AboutSection() {
-    const [current, setCurrent] = useState(0);
-    const total = images.length;
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="mb-6 flex items-center justify-between"
+        >
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+            Recent Events
+          </h2>
+          <Separator className="ml-4 hidden flex-1 sm:block" />
+        </motion.div>
 
-    const prev = () => setCurrent((current - 1 + total) % total);
-    const next = () => setCurrent((current + 1) % total);
-
-    useEffect(() => {
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        timeoutRef.current = setTimeout(() => {
-            setCurrent((c) => (c + 1) % total);
-        }, 7000);
-        return () => {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        };
-    }, [current, total]);
-
-    return (
-        <section className="w-full flex justify-center py-12 px-4">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-5xl flex flex-col items-center space-y-12">
-
-                {/* --- Carousel Section --- */}
-                <div className="w-full flex flex-col items-center">
-                    <h2 className="text-3xl font-bold text-yellow-500 text-center mb-2">
-                        Our Events
-                    </h2>
-                    <div className="w-full border-b-2 border-yellow-400 mb-8"></div>
-
-                    <div className="relative w-full max-w-xl flex items-center justify-center mb-6 h-64 sm:h-80">
-                        <button
-                            onClick={prev}
-                            className="absolute left-0 top-1/2 -translate-y-1/2 bg-blue-400 text-white rounded-lg p-4 shadow hover:bg-blue-500 transition z-10"
-                            aria-label="Previous"
-                        >
-                            <span className="text-2xl">&#x2039;</span>
-                        </button>
-
-                        <div className="w-full h-full flex items-center justify-center overflow-hidden rounded-xl shadow-lg bg-white relative transition-all duration-700 ease-in-out">
-                            <Image
-                                src={`/${images[current]}`}
-                                alt={imageInfo[current]}
-                                width={400}
-                                height={256}
-                                className="object-cover w-full h-full"
-                                priority
-                            />
-                        </div>
-
-                        <button
-                            onClick={next}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 bg-blue-400 text-white rounded-lg p-4 shadow hover:bg-blue-500 transition z-10"
-                            aria-label="Next"
-                        >
-                            <span className="text-2xl">&#x203A;</span>
-                        </button>
-                    </div>
-
-                    <div className="text-center text-gray-700 text-xl font-medium mb-4">
-                        {imageInfo[current]}
-                    </div>
-
-                    <div className="flex gap-2 mt-2 justify-center">
-                        {images.map((_, idx) => (
-                            <button
-                                key={idx}
-                                className={`w-3 h-3 rounded-full ${idx === current ? "bg-yellow-500" : "bg-gray-300"
-                                    }`}
-                                onClick={() => setCurrent(idx)}
-                                aria-label={`Go to slide ${idx + 1}`}
-                            />
-                        ))}
-                    </div>
-                </div>
-
-                {/* --- Who We Are Section --- */}
-                <div className="w-full flex flex-col items-center">
-                    <h2 className="text-3xl font-bold text-yellow-500 text-center mb-2">
-                        Who We Are
-                    </h2>
-                    <div className="w-full border-b-2 border-yellow-400 mb-8"></div>
-
-                    <p className="text-gray-700 text-center mb-4">
-                        Christian Youth in Power (CYP) is the Youth Outreach of The Community of
-                        the Good Shepherd — a covenanted SOS community.
-                    </p>
-                    <p className="text-gray-700 text-center mb-6">
-                        CYP is a movement of Christian youth, both students and working youth who
-                        aspire to be and make disciples of Our Lord and Saviour, Jesus Christ. We
-                        seek to evangelize and train them to be future leaders in the ‘Power of
-                        the Holy Spirit’ for the service of the Church and society.
-                    </p>
-
-                    <div className="w-full flex justify-center">
-                        <iframe
-                            width="560"
-                            height="315"
-                            src="https://www.youtube.com/embed/5I7pDz0WHlk"
-                            title="YouTube video player"
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            className="rounded-lg shadow-lg w-full max-w-xl h-64 sm:h-80"
-                        ></iframe>
-                    </div>
-                </div>
-
-                {/* --- Social Media Section --- */}
-                <div className="w-full flex flex-col items-center">
-                    <h2 className="text-3xl font-bold text-yellow-500 text-center mb-6">
-                        Connect With Us
-                    </h2>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full">
-                        <button
-                            onClick={() => window.open("https://www.instagram.com/cyp.vasai/", "_blank")}
-                            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-yellow-500 text-white font-medium px-5 py-3 rounded-xl shadow hover:opacity-90 transition w-full sm:w-auto justify-center"
-                        >
-                            <FaInstagram className="text-2xl" />
-                            <span>CYP Vasai</span>
-                        </button>
-
-                        <button
-                            onClick={() =>
-                                window.open("https://www.instagram.com/cyp.youngprofessionals/", "_blank")
-                            }
-                            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-yellow-500 text-white font-medium px-5 py-3 rounded-xl shadow hover:opacity-90 transition w-full sm:w-auto justify-center"
-                        >
-                            <FaInstagram className="text-2xl" />
-                            <span>Young Professionals</span>
-                        </button>
-
-                        <button
-                            onClick={() => window.open("https://www.youtube.com/@cyp-vasai", "_blank")}
-                            className="flex items-center gap-2 bg-red-600 text-white font-medium px-5 py-3 rounded-xl shadow hover:bg-red-700 transition w-full sm:w-auto justify-center"
-                        >
-                            <FaYoutube className="text-2xl" />
-                            <span>Our YouTube Channel</span>
-                        </button>
-                    </div>
-                </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="relative">
+            <div className="-mx-2 flex snap-x snap-mandatory gap-4 overflow-x-auto px-2 pb-2">
+              {images.map((img, i) => (
+                <motion.div
+                  key={img.src}
+                  className="snap-start shrink-0 basis-72 sm:basis-80"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.05 }}
+                >
+                  <Card className="overflow-hidden">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-slate-900">{img.label}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="relative h-44 w-full overflow-hidden rounded-lg">
+                        <Image
+                          src={img.src}
+                          alt={img.label}
+                          fill
+                          sizes="(max-width: 768px) 320px, 400px"
+                          className="object-cover"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
             </div>
-        </section>
-    );
+          </div>
+        </motion.div>
+      </section>
+
+      <section id="who-we-are" className="bg-gradient-to-b from-white to-amber-50/60">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Who We Are</h2>
+            <p className="mt-3 max-w-3xl text-slate-700">
+              Christian Youth in Power (CYP) is the Youth Outreach of The Community of the Good
+              Shepherd — a covenanted SOS community. We are a movement of Christian youth who
+              aspire to be and make disciples of Jesus Christ, evangelizing and forming future
+              leaders in the power of the Holy Spirit for the Church and society.
+            </p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="mt-8"
+          >
+            <div className="relative w-full overflow-hidden rounded-xl border border-sky-100 bg-white shadow-sm">
+              <div className="relative aspect-video w-full">
+                <iframe
+                  className="h-full w-full"
+                  src="https://www.youtube.com/embed/5I7pDz0WHlk"
+                  title="CYP introduction video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="mb-6 flex items-center justify-between"
+        >
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Connect With Us</h2>
+          <Separator className="ml-4 hidden flex-1 sm:block" />
+        </motion.div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Button
+            asChild
+            size="lg"
+            className="w-full bg-gradient-to-r from-pink-500 to-amber-400 text-white hover:from-pink-600 hover:to-amber-500"
+          >
+            <Link
+              href="https://www.instagram.com/cyp.vasai/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open CYP Vasai on Instagram"
+            >
+              <span className="mr-2 inline-flex items-center justify-center">
+                <FaInstagram aria-hidden className="h-5 w-5" />
+              </span>
+              CYP Vasai
+            </Link>
+          </Button>
+          <Button
+            asChild
+            size="lg"
+            className="w-full bg-gradient-to-r from-pink-500 to-amber-400 text-white hover:from-pink-600 hover:to-amber-500"
+          >
+            <Link
+              href="https://www.instagram.com/cyp.youngprofessionals/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open CYP Young Professionals on Instagram"
+            >
+              <span className="mr-2 inline-flex items-center justify-center">
+                <FaInstagram aria-hidden className="h-5 w-5" />
+              </span>
+              Young Professionals
+            </Link>
+          </Button>
+          <Button asChild size="lg" className="w-full bg-red-600 text-white hover:bg-red-700">
+            <Link
+              href="https://www.youtube.com/@cyp-vasai"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open CYP Vasai on YouTube"
+            >
+              <span className="mr-2 inline-flex items-center justify-center">
+                <FaYoutube aria-hidden className="h-5 w-5" />
+              </span>
+              YouTube Channel
+            </Link>
+          </Button>
+        </div>
+      </section>
+    </main>
+  );
 }
