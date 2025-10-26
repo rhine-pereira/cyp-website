@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const endpoint = process.env.APPWRITE_ENDPOINT;
 const s3PublicBase = process.env.AWS_S3_PUBLIC_BASEURL;
 const s3Bucket = process.env.AWS_S3_BUCKET;
+const talksPublicBase = process.env.AWS_TALKS_PUBLIC_BASEURL;
+const talksBucket = process.env.AWS_TALKS_S3_BUCKET;
 
 let images: NextConfig["images"] = undefined;
 if (endpoint) {
@@ -33,6 +35,23 @@ if (s3PublicBase) {
       images = { remotePatterns: [s3Pattern] };
     } else if (images.remotePatterns) {
       images.remotePatterns.push(s3Pattern as any);
+    }
+  } catch {}
+}
+
+// Also allow talksPublicBase domain if provided
+if (talksPublicBase) {
+  try {
+    const u = new URL(talksPublicBase);
+    const talksPattern = {
+      protocol: u.protocol.replace(":", "") as "http" | "https",
+      hostname: u.hostname,
+      pathname: "**",
+    } as const;
+    if (!images) {
+      images = { remotePatterns: [talksPattern] };
+    } else if (images.remotePatterns) {
+      images.remotePatterns.push(talksPattern as any);
     }
   } catch {}
 }
