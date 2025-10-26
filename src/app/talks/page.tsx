@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Music, Video as VideoIcon } from "lucide-react";
 
 type TalkItem = {
   id: string;
@@ -72,25 +73,10 @@ export default function Talks() {
 
   async function onSelect(item: TalkItem) {
     setSelected(item);
-    setPlayUrl(undefined);
-    try {
-      setResolving(true);
-      const res = await fetch("/api/talks/play", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: item.key || item.id }),
-      });
-      const data = await res.json();
-      if (data?.url) {
-        setPlayUrl(data.url);
-        if (typeof window !== "undefined") {
-          window.open(data.url, "_blank", "noopener,noreferrer");
-        }
-      }
-    } catch {
-      setError("Failed to resolve playback URL");
-    } finally {
-      setResolving(false);
+    const key = item.key || item.id;
+    const href = `/talks/watch/${encodeURIComponent(key).replace(/%2F/g, "/")}`;
+    if (typeof window !== "undefined") {
+      window.location.href = href;
     }
   }
 
@@ -114,7 +100,11 @@ export default function Talks() {
                 <div className="flex items-center justify-between">
                   <div className="truncate font-medium text-gray-900">{it.title}</div>
                   <span className="ml-2 inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-gray-800">
-                    {it.type === "video" ? "Video" : "Audio"}
+                    {it.type === "video" ? (
+                      <VideoIcon className="h-4 w-4" />
+                    ) : (
+                      <Music className="h-4 w-4" />
+                    )}
                   </span>
                 </div>
                 <div className="text-xs text-gray-700 mt-0.5">
