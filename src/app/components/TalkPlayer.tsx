@@ -66,7 +66,7 @@ export default function TalkPlayer({ objectKey, className, autoPlay }: Props) {
         controls
         controlsList="nodownload noremoteplayback"
         onContextMenu={(e) => e.preventDefault()}
-        // @ts-expect-error
+        // @ts-expect-error The library type definition is missing this property.
         disableRemotePlayback
         preload="metadata"
         autoPlay={autoPlay}
@@ -81,9 +81,9 @@ export default function TalkPlayer({ objectKey, className, autoPlay }: Props) {
       className={className}
       controls
       controlsList="nodownload noremoteplayback"
-      // @ts-expect-error
+      // @ts-expect-error The library type definition is missing this property.
       disablePictureInPicture
-      // @@ts-expect-error
+      // @@ts-expect-error The library type definition is missing this property.
       disableRemotePlayback
       onContextMenu={(e) => e.preventDefault()}
       playsInline
