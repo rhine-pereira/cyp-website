@@ -66,7 +66,7 @@ export default function TalkPlayer({ objectKey, className, autoPlay }: Props) {
         controls
         controlsList="nodownload noremoteplayback"
         onContextMenu={(e) => e.preventDefault()}
-        // @ts-ignore
+        // @ts-expect-error
         disableRemotePlayback
         preload="metadata"
         autoPlay={autoPlay}
@@ -81,9 +81,9 @@ export default function TalkPlayer({ objectKey, className, autoPlay }: Props) {
       className={className}
       controls
       controlsList="nodownload noremoteplayback"
-      // @ts-ignore
+      // @ts-expect-error
       disablePictureInPicture
-      // @ts-ignore
+      // @@ts-expect-error
       disableRemotePlayback
       onContextMenu={(e) => e.preventDefault()}
       playsInline
