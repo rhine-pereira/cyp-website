@@ -114,6 +114,7 @@ export default function SecureVideoPlayer({ videoKey, token, className, autoPlay
         controlsList="nodownload noremoteplayback"
         onContextMenu={(e) => e.preventDefault()}
         
+  // @ts-expect-error Non-standard HTML attribute needed for security, missing from TS types.
         disableRemotePlayback
         onError={() => setError("Failed to load audio. Check network and CloudFront permissions.")}
         preload="metadata"
