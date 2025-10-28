@@ -1,0 +1,110 @@
+"use client";
+
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import type { Product } from "../types/product";
+
+export type CartItem = {
+  product: Product;
+  qty: number;
+};
+
+type CartContextValue = {
+  items: CartItem[];
+  addToCart: (product: Product, qty?: number) => void;
+  removeFromCart: (productId: string) => void;
+  updateQty: (productId: string, qty: number) => void;
+  clearCart: () => void;
+  count: number;
+  subtotal: number;
+};
+
+const CartContext = createContext<CartContextValue | null>(null);
+
+const STORAGE_KEY = "cyp_cart_v1";
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null;
+      if (raw) {
+        const parsed = JSON.parse(raw) as CartItem[];
+        setItems(parsed);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      }
+    } catch {}
+  }, [items]);
+
+  const addToCart = (product: Product, qty: number = 1) => {
+    setItems((prev) => {
+      const idx = prev.findIndex((i) => i.product.id === product.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], qty: next[idx].qty + qty };
+        return next;
+      }
+      return [...prev, { product, qty }];
+    });
+  };
+
+  const removeFromCart = (productId: string) => {
+    setItems((prev) => prev.filter((i) => i.product.id !== productId));
+  };
+
+  const updateQty = (productId: string, qty: number) => {
+    setItems((prev) => prev.map((i) => (i.product.id === productId ? { ...i, qty } : i)));
+  };
+
+  const clearCart = () => setItems([]);
+
+  const { count, subtotal } = useMemo(() => {
+    const count = items.reduce((acc, i) => acc + i.qty, 0);
+    const subtotal = items.reduce((acc, i) => acc + i.qty * i.product.price, 0);
+    return { count, subtotal };
+  }, [items]);
+
+  useEffect(() => {
+    function handler(e: Event) {
+      const ce = e as CustomEvent<Product | { product: Product; qty?: number }>;
+      const detail: any = ce.detail;
+      if (!detail) return;
+      const product = (detail.product ?? detail) as Product;
+      const qty = detail.qty ?? 1;
+      if (product && product.id) addToCart(product, qty);
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("add-to-cart", handler as EventListener);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("add-to-cart", handler as EventListener);
+      }
+    };
+  }, []);
+
+  const value: CartContextValue = {
+    items,
+    addToCart,
+    removeFromCart,
+    updateQty,
+    clearCart,
+    count,
+    subtotal,
+  };
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+}
+
+export function useCart() {
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error("useCart must be used within CartProvider");
+  return ctx;
+}

@@ -56,6 +56,26 @@ export default function AdminPage() {
               </div>
             </Link>
 
+            <Link href="/admin/fundraiser" className="block">
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full">
+                <div className="flex items-center mb-4">
+                  <Plus className="h-5 w-5 text-red-600 mr-2" />
+                  <h2 className="text-lg font-semibold text-gray-900">Add Fundraiser Item</h2>
+                </div>
+                <p className="text-gray-600">Create a new fundraiser listing.</p>
+              </div>
+            </Link>
+
+            <Link href="/admin/fundraiser/manage" className="block">
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full">
+                <div className="flex items-center mb-4">
+                  <List className="h-5 w-5 text-red-600 mr-2" />
+                  <h2 className="text-lg font-semibold text-gray-900">Manage Fundraiser</h2>
+                </div>
+                <p className="text-gray-600">Activate, stock, or delete fundraiser items.</p>
+              </div>
+            </Link>
+
             <Link href="/admin/admins" className="block">
               <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm h-full">
                 <div className="flex items-center mb-4">
