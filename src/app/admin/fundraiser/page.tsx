@@ -63,6 +63,42 @@ export default function AdminFundraiserAddPage() {
     }
   };
 
+  const handleMultipleFileUpload = async (i: number, files: FileList) => {
+    const fileArr = Array.from(files);
+    if (fileArr.length === 0) return;
+    // Upload sequentially to keep order predictable
+    for (let idx = 0; idx < fileArr.length; idx++) {
+      const f = fileArr[idx];
+      try {
+        setUploadingIdx(i);
+        const fd = new FormData();
+        fd.append("file", f);
+        fd.append("uploadType", "image");
+        fd.append("isAdminUpload", "true");
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        const data = await res.json();
+        if (data?.success && data?.url) {
+          setImages((prev) => {
+            const next = [...prev];
+            if (idx === 0) {
+              next[i] = data.url as string;
+            } else {
+              next.push(data.url as string);
+            }
+            return next;
+          });
+          setMessage("Image uploaded");
+        } else {
+          setMessage("Upload failed");
+        }
+      } catch {
+        setMessage("Upload failed");
+      } finally {
+        setUploadingIdx(null);
+      }
+    }
+  };
+
   const save = async () => {
     try {
       setSaving(true);
@@ -122,9 +158,13 @@ export default function AdminFundraiserAddPage() {
                   <input
                     type="file"
                     accept="image/*"
+                    multiple
+                    className="text-gray-900 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:text-gray-900 hover:file:bg-slate-200"
                     onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) handleFileUpload(i, f);
+                      const fl = e.target.files;
+                      if (fl && fl.length > 0) {
+                        handleMultipleFileUpload(i, fl);
+                      }
                     }}
                   />
                   {images.length > 1 && (
