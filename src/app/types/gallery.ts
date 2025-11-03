@@ -11,6 +11,7 @@ export interface GalleryItem {
   categoryLabel?: string;
   // Optional S3 object key when the asset is stored in our bucket
   key?: string;
+  year?: number;
   createdAt: string;
 }
 

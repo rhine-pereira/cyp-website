@@ -5,6 +5,7 @@ import { FormLayout, FormField } from '@/app/types/form';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/app/components/ui/button';
 import Image from 'next/image';
+import * as safeStorage from '@/app/lib/safeStorage';
 
 interface FormSubmissionProps {
   form: FormLayout;
@@ -94,7 +95,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
         setSubmitStatus('success');
         reset();
         // clear draft
-        try { localStorage.removeItem(formKey); } catch {}
+        try { safeStorage.removeItem(formKey); } catch {}
       } else {
         throw new Error(result.error || 'Failed to submit form');
       }
@@ -110,7 +111,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
   useEffect(() => {
     // load draft if exists
     try {
-      const raw = localStorage.getItem(formKey);
+      const raw = safeStorage.getItem(formKey);
       if (raw) {
         const values = JSON.parse(raw);
         Object.entries(values).forEach(([k, v]) => setValue(k, v));
@@ -120,7 +121,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
     const saveDraft = () => {
       try {
         const vals = getValues();
-        localStorage.setItem(formKey, JSON.stringify(vals));
+        safeStorage.setItem(formKey, JSON.stringify(vals));
       } catch {}
     };
 

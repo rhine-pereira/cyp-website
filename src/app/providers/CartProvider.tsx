@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Product } from "../types/product";
+import * as safeStorage from "@/app/lib/safeStorage";
 
 export type CartItem = {
   product: Product;
@@ -27,7 +28,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      const raw = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null;
+      const raw = safeStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as CartItem[];
         setItems(parsed);
@@ -37,9 +38,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-      }
+      safeStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     } catch {}
   }, [items]);
 

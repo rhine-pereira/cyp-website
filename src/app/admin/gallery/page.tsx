@@ -13,6 +13,7 @@ export default function AdminGalleryUploadPage() {
   const [categoryQuery, setCategoryQuery] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [thumbUrl, setThumbUrl] = useState('');
+  const [year, setYear] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string|undefined>();
   const [lastError, setLastError] = useState<string|undefined>();
@@ -129,6 +130,9 @@ export default function AdminGalleryUploadPage() {
       ? globalThis.crypto.randomUUID()
       : Math.random().toString(36).slice(2));
 
+    const yStr = (year || '').trim();
+    const yearNum = yStr ? (parseInt(yStr, 10) || new Date().getFullYear()) : new Date().getFullYear();
+
     return {
       id,
       type: fileType,
@@ -139,6 +143,7 @@ export default function AdminGalleryUploadPage() {
       thumbnailUrl: fileType === 'video' ? (thumbUrl || undefined) : undefined,
       category: categorySlug,
       categoryLabel,
+      year: yearNum,
       createdAt: new Date().toISOString(),
     } as GalleryItem;
   };
@@ -261,6 +266,9 @@ export default function AdminGalleryUploadPage() {
       ? globalThis.crypto.randomUUID()
       : Math.random().toString(36).slice(2));
 
+    const yStr = (year || '').trim();
+    const yearNum = yStr ? (parseInt(yStr, 10) || new Date().getFullYear()) : new Date().getFullYear();
+
     return {
       id,
       type: fileType,
@@ -271,6 +279,7 @@ export default function AdminGalleryUploadPage() {
       thumbnailUrl: fileType === 'video' ? (thumbUrl || undefined) : undefined,
       category: categorySlug,
       categoryLabel,
+      year: yearNum,
       createdAt: new Date().toISOString(),
     } as GalleryItem;
   };
@@ -291,6 +300,9 @@ export default function AdminGalleryUploadPage() {
           ? globalThis.crypto.randomUUID()
           : Math.random().toString(36).slice(2));
 
+        const yStr = (year || '').trim();
+        const yearNum = yStr ? (parseInt(yStr, 10) || new Date().getFullYear()) : new Date().getFullYear();
+
         const single: GalleryItem = {
           id,
           type: 'video',
@@ -300,6 +312,7 @@ export default function AdminGalleryUploadPage() {
           thumbnailUrl: thumbUrl || undefined,
           category: categorySlug,
           categoryLabel,
+          year: yearNum,
           createdAt: new Date().toISOString(),
         };
         const res = await fetch('/api/gallery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(single) });
@@ -499,6 +512,11 @@ export default function AdminGalleryUploadPage() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-900">Year</label>
+                <input value={year} onChange={(e)=>setYear(e.target.value)} type="number" className="mt-1 w-full border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white" />
               </div>
 
               <div>
