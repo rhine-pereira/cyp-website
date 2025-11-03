@@ -47,8 +47,22 @@ export async function POST(request: NextRequest) {
         // Exclude 'admin-image' fields from being added to the sheet
         ...(form.fields ?? []).filter((field) => field.type !== 'admin-image').map((field) => {
           const value = data[field.id];
+          // Normalize arrays
           if (Array.isArray(value)) {
-            return value.join(', ');
+            return (value as unknown[]).map(v => (v ?? '')).join(', ');
+          }
+          // Normalize objects (e.g., checkbox objects or unexpected structs)
+          if (value && typeof value === 'object') {
+            try {
+              // If it's a simple object with primitive values, join values
+              const vals = Object.values(value as Record<string, unknown>);
+              if (vals.length > 0 && vals.every(v => typeof v !== 'object')) {
+                return vals.map(v => String(v ?? '')).join(', ');
+              }
+              return JSON.stringify(value);
+            } catch {
+              return '';
+            }
           }
           // For image and file fields, show a clickable link if it's a URL
           if ((field.type === 'image' || field.type === 'file') && value && typeof value === 'string' && value.startsWith('http')) {

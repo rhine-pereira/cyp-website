@@ -20,6 +20,10 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
   const { register, handleSubmit, formState: { errors, isValid }, reset, getValues, setValue } = useForm<FormData>({ mode: 'onChange' });
   const formKey = `form_draft_${form.id}`;
 
+  const toSafeId = (id: string) => id.replace(/[\.\,\[\]\s]+/g, '_');
+  const safeIdMap: Record<string, string> = Object.fromEntries(form.fields.map(f => [f.id, toSafeId(f.id)]));
+  const origIdBySafe: Record<string, string> = Object.fromEntries(Object.entries(safeIdMap).map(([orig, safe]) => [safe, orig]));
+
   const linkify = (text: string) => {
     const splitRegex = /(https?:\/\/[^\s]+)/g; // for splitting only
     const parts = text.split(splitRegex);
@@ -49,13 +53,14 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
       const processedData: Record<string, unknown> = {};
       
       for (const [key, value] of Object.entries(data)) {
+        const originalKey = origIdBySafe[key] ?? key;
         if (value instanceof FileList && value.length > 0) {
           const file = value[0];
           // Upload any file to Appwrite Storage
           const uploadFormData = new FormData();
           uploadFormData.append('file', file);
           uploadFormData.append('isAdminUpload', 'false');
-          const fieldMeta = form.fields.find(f => f.id === key);
+          const fieldMeta = form.fields.find(f => f.id === originalKey);
           const uploadType = fieldMeta?.type === 'image' ? 'image' : 'file';
           uploadFormData.append('uploadType', uploadType);
 
@@ -67,14 +72,32 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
           const uploadResult = await uploadResponse.json();
 
           if (uploadResult.success) {
-            processedData[key] = uploadResult.url;
+            processedData[originalKey] = uploadResult.url;
           } else {
             throw new Error(`Failed to upload file: ${uploadResult.error}`);
           }
         } else if (Array.isArray(value)) {
-          processedData[key] = value.join(', ');
+          processedData[originalKey] = value.join(', ');
+        } else if (value && typeof value === 'object') {
+          // Normalize nested objects (e.g., checkbox groups registered as field.id.index)
+          const fieldMeta = form.fields.find(f => f.id === originalKey);
+          if (fieldMeta?.type === 'checkbox') {
+            try {
+              const vals = Object.values(value as Record<string, unknown>).filter(v => v != null) as string[];
+              processedData[originalKey] = vals.join(', ');
+            } catch {
+              processedData[originalKey] = '';
+            }
+          } else {
+            // Fallback: stringify unknown objects to avoid sending struct values
+            try {
+              processedData[originalKey] = JSON.stringify(value);
+            } catch {
+              processedData[originalKey] = '';
+            }
+          }
         } else {
-          processedData[key] = value;
+          processedData[originalKey] = value;
         }
       }
 
@@ -114,14 +137,24 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
       const raw = safeStorage.getItem(formKey);
       if (raw) {
         const values = JSON.parse(raw);
-        Object.entries(values).forEach(([k, v]) => setValue(k, v));
+        Object.entries(values).forEach(([k, v]) => {
+          // Support both original IDs and already-safe IDs in stored drafts
+          const targetKey = safeIdMap[k] ?? k;
+          setValue(targetKey, v);
+        });
       }
     } catch {}
 
     const saveDraft = () => {
       try {
         const vals = getValues();
-        safeStorage.setItem(formKey, JSON.stringify(vals));
+        // Store using original IDs for readability/backward-compat
+        const normalized: Record<string, unknown> = {};
+        Object.entries(vals).forEach(([k, v]) => {
+          const originalKey = origIdBySafe[k] ?? k;
+          normalized[originalKey] = v;
+        });
+        safeStorage.setItem(formKey, JSON.stringify(normalized));
       } catch {}
     };
 
@@ -161,13 +194,14 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
     const baseClasses = "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 placeholder-slate-500";
     const errorClasses = "border-red-500 focus:ring-red-500";
     
-    const fieldClasses = errors[field.id] ? `${baseClasses} ${errorClasses}` : baseClasses;
+    const safeId = toSafeId(field.id);
+    const fieldClasses = (errors as Record<string, any>)[safeId] ? `${baseClasses} ${errorClasses}` : baseClasses;
     
     switch (field.type) {
       case 'textarea':
         return (
           <textarea
-            {...register(field.id, {
+            {...register(safeId, {
               required: field.required ? `${field.label} is required` : false,
               minLength: field.validation?.minLength ? {
                 value: field.validation.minLength,
@@ -187,7 +221,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
       case 'select':
         return (
           <select
-            {...register(field.id, {
+            {...register(safeId, {
               required: field.required ? `${field.label} is required` : false,
             })}
             className={`${fieldClasses} bg-white`}
@@ -204,7 +238,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
             {field.options?.map((option: string, index: number) => (
               <label key={index} className="flex items-center">
                 <input
-                  {...register(field.id, {
+                  {...register(safeId, {
                     required: field.required ? `${field.label} is required` : false,
                   })}
                   type="radio"
@@ -223,7 +257,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
             {field.options?.map((option: string, index: number) => (
               <label key={index} className="flex items-center">
                 <input
-                  {...register(`${field.id}.${index}`, {
+                  {...register(`${safeId}.${index}`, {
                     required: field.required ? `${field.label} is required` : false,
                   })}
                   type="checkbox"
@@ -239,7 +273,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
       case 'file':
         return (
           <input
-            {...register(field.id, {
+            {...register(safeId, {
               required: field.required ? `${field.label} is required` : false,
             })}
             type="file"
@@ -251,7 +285,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
         return (
           <div className="space-y-2">
             <input
-              {...register(field.id, {
+              {...register(safeId, {
                 required: field.required ? `${field.label} is required` : false,
               })}
               type="file"
@@ -290,7 +324,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
       default:
         return (
           <input
-            {...register(field.id, {
+            {...register(safeId, {
               required: field.required ? `${field.label} is required` : false,
               min: field.validation?.min,
               max: field.validation?.max,
@@ -363,8 +397,8 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
                 </label>
               )}
               {renderField(field)}
-              {Boolean(errors[field.id]?.message) && (
-                <p className="text-sm text-red-600">{String(errors[field.id]?.message)}</p>
+              {Boolean((errors as Record<string, any>)[toSafeId(field.id)]?.message) && (
+                <p className="text-sm text-red-600">{String((errors as Record<string, any>)[toSafeId(field.id)]?.message)}</p>
               )}
             </div>
           ))}
