@@ -7,6 +7,9 @@ export type TalkItem = {
   type: "audio" | "video";
   durationSeconds?: number;
   createdAt: string; // ISO string
+  series?: string;
+  thumbnailKey?: string;
+  thumbnailUrl?: string;
 };
 
 export type TalksMetadataFile = {

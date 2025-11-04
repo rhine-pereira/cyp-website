@@ -13,6 +13,7 @@ type TalkItem = {
   type: "audio" | "video";
   durationSeconds?: number;
   createdAt: string;
+  thumbnailUrl?: string;
 };
 
 type TalksResponse = {
@@ -101,21 +102,46 @@ export default function Talks() {
                   className={`px-4 py-3 hover:bg-gray-100 ${selected?.id === it.id ? "bg-gray-200" : ""}`}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <a className="min-w-0 no-underline" href={href}>
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-gray-800">
-                          {it.type === "video" ? (
-                            <VideoIcon className="h-4 w-4" />
-                          ) : (
-                            <Music className="h-4 w-4" />
-                          )}
-                        </span>
-                        <div className="truncate font-medium text-gray-900">{it.title}</div>
+                    <div
+                      className="min-w-0 no-underline flex items-center gap-3 cursor-pointer"
+                      role="link"
+                      tabIndex={0}
+                      onClick={()=>onSelect(it)}
+                      onKeyDown={(e)=>{ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(it); } }}
+                    >
+                      <div className="h-14 w-14 rounded overflow-hidden bg-gray-200 flex items-center justify-center shrink-0">
+                        {it.thumbnailUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={it.thumbnailUrl} alt="thumbnail" className="h-full w-full object-cover" onError={(e)=>{ (e.currentTarget as HTMLImageElement).style.display='none'; }} />
+                        ) : (
+                          <div className="text-gray-700">
+                            {it.type === "video" ? (
+                              <VideoIcon className="h-6 w-6" />
+                            ) : (
+                              <Music className="h-6 w-6" />
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-xs text-gray-700 mt-0.5">
-                        {it.date ? new Date(it.date).toLocaleString() : new Date(it.createdAt).toLocaleString()}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-gray-800">
+                            {it.type === "video" ? (
+                              <VideoIcon className="h-4 w-4" />
+                            ) : (
+                              <Music className="h-4 w-4" />
+                            )}
+                          </span>
+                          <div className="truncate font-medium text-gray-900">{it.title}</div>
+                        </div>
+                        <div className="text-xs text-gray-700 mt-0.5 truncate">
+                          {it.speaker ? `by ${it.speaker}` : null}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-0.5">
+                          {(() => { const d = it.date ? new Date(it.date) : new Date(it.createdAt); const dd = String(d.getDate()).padStart(2, '0'); const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]; const yyyy = d.getFullYear(); return `${dd} ${mon} ${yyyy}`; })()}
+                        </div>
                       </div>
-                    </a>
+                    </div>
                     <Button asChild size="sm" className="shrink-0">
                       <a href={href}>Watch</a>
                     </Button>

@@ -3,7 +3,7 @@
 import React from 'react';
 import AuthGuard from '@/app/components/Auth/AuthGuard';
 import Link from 'next/link';
-import { Plus, List, Settings, Image as ImageIcon } from 'lucide-react';
+import { Plus, List, Settings, Image as ImageIcon, Mic as MicIcon } from 'lucide-react';
 
 export default function AdminPage() {
   return (
@@ -44,6 +44,19 @@ export default function AdminPage() {
                 </Link>
                 <Link href="/admin/gallery/manage" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-sky-600 text-white hover:bg-sky-700">
                   <List className="h-4 w-4" /> Manage
+                </Link>
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full">
+              <div className="flex items-center mb-4">
+                <MicIcon className="h-5 w-5 text-indigo-600 mr-2" />
+                <h2 className="text-lg font-semibold text-gray-900">Talks</h2>
+              </div>
+              <p className="text-gray-600">Upload sermons/talks and manage metadata.</p>
+              <div className="mt-4 flex gap-2">
+                <Link href="/admin/talks" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-indigo-600 text-white hover:bg-indigo-700">
+                  <Plus className="h-4 w-4" /> Upload
                 </Link>
               </div>
             </div>
