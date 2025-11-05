@@ -260,6 +260,24 @@ function useGalleryPagination(category: string, initialItems: GalleryItem[], ini
   const [cursor, setCursor] = useState<string | undefined>(initialCursor);
   const [loading, setLoading] = useState(false);
 
+  // Fetch initial data if not provided by SSR
+  useEffect(() => {
+    if (items.length === 0) {
+      const fetchInitial = async () => {
+        setLoading(true);
+        const params = new URLSearchParams();
+        params.set('category', category);
+        params.set('limit', '12');
+        const res = await fetch(`/api/gallery?${params.toString()}`, { cache: 'no-store' });
+        const data = await res.json();
+        setItems(data.items || []);
+        setCursor(data.nextCursor);
+        setLoading(false);
+      };
+      void fetchInitial();
+    }
+  }, [category, items.length]);
+
   const load = async () => {
     if (!cursor || loading) return;
     setLoading(true);

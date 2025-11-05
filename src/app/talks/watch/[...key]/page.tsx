@@ -1,4 +1,6 @@
 import TalkPlayer from "../../../components/TalkPlayer";
+import { GetObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { s3, TALKS_S3_BUCKET } from "@/app/lib/s3";
 
 function decodeKeyParam(param: string | string[]): string {
   const joined = Array.isArray(param) ? param.join("/") : param;
@@ -34,6 +36,54 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
+async function bodyToString(body: any): Promise<string> {
+  if (!body) return "";
+  if (typeof body.transformToString === "function") return body.transformToString();
+  if (typeof body.transformToByteArray === "function") {
+    const arr: Uint8Array = await body.transformToByteArray();
+    return new TextDecoder().decode(arr);
+  }
+  if (typeof body.getReader === "function") {
+    const reader = body.getReader();
+    const chunks: Uint8Array[] = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) chunks.push(value);
+    }
+    const totalLength = chunks.reduce((acc, c) => acc + c.length, 0);
+    const merged = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const c of chunks) { merged.set(c, offset); offset += c.length; }
+    return new TextDecoder().decode(merged);
+  }
+  return "";
+}
+
+async function getSummary(key: string): Promise<string | null> {
+  try {
+    const dir = key.split('/').slice(0, -1).join('/');
+    const summaryKey = `${dir}/summary.md`;
+
+    try {
+      const out = await s3.send(new GetObjectCommand({ Bucket: TALKS_S3_BUCKET, Key: summaryKey }));
+      const text = await bodyToString((out as any).Body);
+      return text || null;
+    } catch {
+      // Fallback: list the directory and try to locate a case-insensitive summary.md
+      const list = await s3.send(new ListObjectsV2Command({ Bucket: TALKS_S3_BUCKET, Prefix: dir ? `${dir}/` : undefined }));
+      const items = (list.Contents || []).map(o => o.Key || "").filter(Boolean);
+      const found = items.find(k => k.split('/').pop()!.toLowerCase() === 'summary.md');
+      if (!found) return null;
+      const alt = await s3.send(new GetObjectCommand({ Bucket: TALKS_S3_BUCKET, Key: found }));
+      const text = await bodyToString((alt as any).Body);
+      return text || null;
+    }
+  } catch {
+    return null;
+  }
+}
+
 export default async function Page({ params }: { params: Promise<{ key: string[] }> }) {
   const p = await params;
   const key = decodeKeyParam(p?.key || []);
@@ -41,12 +91,8 @@ export default async function Page({ params }: { params: Promise<{ key: string[]
 
   let summaryHtml: string | null = null;
   try {
-    const dir = key.split('/').slice(0, -1).join('/');
-    const res = await fetch(`/api/talks/summary?dir=${encodeURIComponent(dir)}`, { cache: "no-store" });
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.summary) summaryHtml = renderMarkdown(String(data.summary));
-    }
+    const summary = await getSummary(key);
+    if (summary) summaryHtml = renderMarkdown(summary);
   } catch {}
 
   return (

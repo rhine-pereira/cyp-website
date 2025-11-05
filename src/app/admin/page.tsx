@@ -58,6 +58,9 @@ export default function AdminPage() {
                 <Link href="/admin/talks" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-indigo-600 text-white hover:bg-indigo-700">
                   <Plus className="h-4 w-4" /> Upload
                 </Link>
+                <Link href="/admin/talks/manage" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-purple-600 text-white hover:bg-purple-700">
+                  <List className="h-4 w-4" /> Manage
+                </Link>
               </div>
             </div>
 

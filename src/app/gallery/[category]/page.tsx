@@ -7,19 +7,20 @@ type Props = {
 };
 
 async function getCategoryData(category: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-  try {
-    const res = await fetch(`${baseUrl}/api/gallery?category=${encodeURIComponent(category)}&limit=12`, {
-      cache: 'no-store',
-    });
-    if (!res.ok) return { items: [], nextCursor: undefined, categoryLabel: category };
-    const data = await res.json();
-    const categoryLabel = data.items?.[0]?.categoryLabel || category;
-    return { items: data.items || [], nextCursor: data.nextCursor, categoryLabel };
-  } catch (error) {
-    console.error('Error fetching category data:', error);
+  // For server-side rendering, we need to handle the API call differently
+  // In production, we can't use localhost, so we'll use relative URLs or skip SSR data fetching
+  const isServer = typeof window === 'undefined';
+  
+  if (!isServer) {
+    // Client-side should never reach here since this is a server component
     return { items: [], nextCursor: undefined, categoryLabel: category };
   }
+
+  // On the server, we can either:
+  // 1. Import and call the API logic directly
+  // 2. Return empty initial data and let client fetch
+  // For now, return empty and let client component handle it
+  return { items: [], nextCursor: undefined, categoryLabel: category };
 }
 
 export async function generateMetadata({ params }: Props) {
