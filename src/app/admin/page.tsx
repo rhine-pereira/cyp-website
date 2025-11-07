@@ -3,7 +3,7 @@
 import React from 'react';
 import AuthGuard from '@/app/components/Auth/AuthGuard';
 import Link from 'next/link';
-import { Plus, List, Settings, Image as ImageIcon, Mic as MicIcon } from 'lucide-react';
+import { Plus, List, Settings, Image as ImageIcon, Mic as MicIcon, CalendarDays as CalendarIcon } from 'lucide-react';
 
 export default function AdminPage() {
   return (
@@ -16,6 +16,7 @@ export default function AdminPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {/* Forms */}
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full">
               <div className="flex items-center mb-4">
                 <ImageIcon className="h-5 w-5 text-purple-600 mr-2" />
@@ -32,6 +33,7 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* Gallery */}
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full">
               <div className="flex items-center mb-4">
                 <ImageIcon className="h-5 w-5 text-sky-600 mr-2" />
@@ -48,6 +50,7 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* Talks */}
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full">
               <div className="flex items-center mb-4">
                 <MicIcon className="h-5 w-5 text-indigo-600 mr-2" />
@@ -64,6 +67,7 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* Fundraiser */}
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full">
               <div className="flex items-center mb-4">
                 <List className="h-5 w-5 text-red-600 mr-2" />
@@ -75,6 +79,23 @@ export default function AdminPage() {
                   <Plus className="h-4 w-4" /> Add Item
                 </Link>
                 <Link href="/admin/fundraiser/manage" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-rose-600 text-white hover:bg-rose-700">
+                  <List className="h-4 w-4" /> Manage
+                </Link>
+              </div>
+            </div>
+
+            {/* Events */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full">
+              <div className="flex items-center mb-4">
+                <CalendarIcon className="h-5 w-5 text-amber-600 mr-2" />
+                <h2 className="text-lg font-semibold text-gray-900">Events</h2>
+              </div>
+              <p className="text-gray-600">Create and manage events, and link them to gallery photos.</p>
+              <div className="mt-4 flex gap-2">
+                <Link href="/admin/events/create" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-amber-600 text-white hover:bg-amber-700">
+                  <Plus className="h-4 w-4" /> New
+                </Link>
+                <Link href="/admin/events" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-amber-700 text-white hover:bg-amber-800">
                   <List className="h-4 w-4" /> Manage
                 </Link>
               </div>

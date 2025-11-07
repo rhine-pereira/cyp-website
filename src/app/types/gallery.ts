@@ -11,6 +11,8 @@ export interface GalleryItem {
   categoryLabel?: string;
   // Optional S3 object key when the asset is stored in our bucket
   key?: string;
+  // Optional link to an event (Firestore event id)
+  eventId?: string;
   year?: number;
   createdAt: string;
 }

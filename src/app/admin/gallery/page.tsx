@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import AuthGuard from '@/app/components/Auth/AuthGuard';
 import type { GalleryItem } from '@/app/types/gallery';
+import type { EventItem } from '@/app/types/event';
 
 export default function AdminGalleryUploadPage() {
   const [files, setFiles] = useState<File[]>([]);
@@ -21,6 +22,8 @@ export default function AdminGalleryUploadPage() {
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [dragActive, setDragActive] = useState(false);
   const [items, setItems] = useState<GalleryItem[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [existingCategories, setExistingCategories] = useState<string[]>([]);
   const [catOpen, setCatOpen] = useState(false);
@@ -56,6 +59,12 @@ export default function AdminGalleryUploadPage() {
       cats.sort();
       setExistingCategories(cats as string[]);
     }
+    // Load events for linking
+    try {
+      const evRes = await fetch('/api/events?limit=1000', { cache: 'no-store' });
+      const evJson = await evRes.json();
+      if (evRes.ok) setEvents((evJson.items as EventItem[]) || []);
+    } catch {}
   };
 
   useEffect(() => { void loadItems(); }, []);
@@ -143,6 +152,7 @@ export default function AdminGalleryUploadPage() {
       thumbnailUrl: fileType === 'video' ? (thumbUrl || undefined) : undefined,
       category: categorySlug,
       categoryLabel,
+      eventId: selectedEventId || undefined,
       year: yearNum,
       createdAt: new Date().toISOString(),
     } as GalleryItem;
@@ -279,6 +289,7 @@ export default function AdminGalleryUploadPage() {
       thumbnailUrl: fileType === 'video' ? (thumbUrl || undefined) : undefined,
       category: categorySlug,
       categoryLabel,
+      eventId: selectedEventId || undefined,
       year: yearNum,
       createdAt: new Date().toISOString(),
     } as GalleryItem;
@@ -312,6 +323,7 @@ export default function AdminGalleryUploadPage() {
           thumbnailUrl: thumbUrl || undefined,
           category: categorySlug,
           categoryLabel,
+          eventId: selectedEventId || undefined,
           year: yearNum,
           createdAt: new Date().toISOString(),
         };
@@ -332,7 +344,7 @@ export default function AdminGalleryUploadPage() {
       setStatuses(newStatuses);
       setProgress({});
 
-      const created: GalleryItem[] = [];
+  const created: GalleryItem[] = [];
       const batchSize = 3;
       for (let i = 0; i < files.length; i += batchSize) {
         const batch = files.slice(i, i + batchSize);
@@ -442,6 +454,20 @@ export default function AdminGalleryUploadPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-900">Caption</label>
                     <input value={caption} onChange={(e)=>setCaption(e.target.value)} className="mt-1 w-full border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-900">Link to Event (optional)</label>
+                    <select
+                      value={selectedEventId}
+                      onChange={(e)=>setSelectedEventId(e.target.value)}
+                      className="mt-1 w-full border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white"
+                    >
+                      <option value="">— None —</option>
+                      {events.map(ev => (
+                        <option key={ev.id} value={ev.id}>{ev.title}</option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-xs text-gray-600">Associate this upload with an existing event so it appears on its gallery.</p>
                   </div>
                 </div>
               </div>
