@@ -334,6 +334,59 @@ export default function HomePage() {
         </motion.div>
       </section>
 
+      {/* Weekly Gathering - seamlessly blended */}
+      <section className="py-8 sm:py-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-8"
+          >
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              Weekly Gathering
+            </h2>
+            <p className="mt-3 text-lg text-slate-700">
+              Join us every Monday for fellowship, worship, and spiritual growth
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-col md:flex-row md:items-center md:justify-center gap-6 text-center md:text-left"
+          >
+            <div className="flex items-center justify-center md:justify-start gap-2 text-sm md:text-base text-slate-700">
+              <Clock className="h-4 w-4 text-sky-600" />
+              <span>Every Monday</span>
+              <span className="mx-2 text-slate-400">•</span>
+              <strong className="text-slate-900">7:00pm — 9:00pm</strong>
+            </div>
+            
+            <div className="flex items-start justify-center md:justify-start gap-2 text-sm md:text-base text-slate-700">
+              <MapPin className="h-4 w-4 text-amber-600 mt-0.5" />
+              <div>
+                <div className="text-slate-900">Jeevan Darshan Kendra, Giriz</div>
+                <div className="text-slate-600">Vasai, Maharashtra</div>
+              </div>
+            </div>
+
+            <Link
+              href="https://maps.app.goo.gl/q2GgBCUyaGfCgj7RA"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 text-sm md:text-base font-semibold text-sky-600 hover:text-sky-700 hover:underline"
+            >
+              <MapPin className="h-4 w-4" />
+              Open in Google Maps
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
       {/* 2. EVENTS SECTION */}
       <section className="bg-gradient-to-b from-sky-50 to-white py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

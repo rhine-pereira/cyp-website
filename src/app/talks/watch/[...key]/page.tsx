@@ -1,4 +1,5 @@
 import TalkPlayer from "../../../components/TalkPlayer";
+import TalkShareButton from '@/app/components/TalkShareButton';
 import { GetObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { s3, TALKS_S3_BUCKET } from "@/app/lib/s3";
 
@@ -70,8 +71,10 @@ async function getSummary(key: string): Promise<string | null> {
       const text = await bodyToString((out as any).Body);
       return text || null;
     } catch {
-      // Fallback: list the directory and try to locate a case-insensitive summary.md
-      const list = await s3.send(new ListObjectsV2Command({ Bucket: TALKS_S3_BUCKET, Prefix: dir ? `${dir}/` : undefined }));
+      // Fallback: only search within the same directory (case-insensitive filename).
+      // If there is no directory (root-level key), don't list the entire bucket — return null.
+      if (!dir) return null;
+      const list = await s3.send(new ListObjectsV2Command({ Bucket: TALKS_S3_BUCKET, Prefix: `${dir}/` }));
       const items = (list.Contents || []).map(o => o.Key || "").filter(Boolean);
       const found = items.find(k => k.split('/').pop()!.toLowerCase() === 'summary.md');
       if (!found) return null;
@@ -84,10 +87,28 @@ async function getSummary(key: string): Promise<string | null> {
   }
 }
 
+async function getTalkTitle(key: string): Promise<string> {
+  try {
+    // Fetch from the talks API to get the actual title
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/talks`, { 
+      cache: 'no-store' 
+    });
+    const data = await res.json();
+    const talk = data.items?.find((item: any) => (item.key || item.id) === key);
+    if (talk?.title) return talk.title;
+  } catch {
+    // Fall back to deriving title from filename
+  }
+  
+  // Fallback: derive title from filename using the same logic as the API
+  const filename = key.split("/").pop() || key;
+  return filename.replace(/\.[^.]+$/, '').replace(/[\-_]+/g, ' ').trim();
+}
+
 export default async function Page({ params }: { params: Promise<{ key: string[] }> }) {
   const p = await params;
   const key = decodeKeyParam(p?.key || []);
-  const name = key.split("/").pop() || key;
+  const title = await getTalkTitle(key);
 
   let summaryHtml: string | null = null;
   try {
@@ -97,11 +118,14 @@ export default async function Page({ params }: { params: Promise<{ key: string[]
 
   return (
     <main className="mx-auto max-w-5xl p-4">
-      <div className="mb-2">
-        <a href="/talks" className="text-sm text-blue-700 hover:underline">← Back to Talks</a>
-      </div>
-      <h1 className="text-2xl font-semibold tracking-tight text-slate-900 break-words">{name}</h1>
-      <div className="text-xs text-slate-600 mb-4 break-words">{key}</div>
+          <div className="mb-2 flex items-center justify-between">
+            <a href="/talks" className="text-sm text-blue-700 hover:underline">← Back to Talks</a>
+            <div className="ml-4">
+              <TalkShareButton title={title} />
+            </div>
+          </div>
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-900 break-words">{title}</h1>
+  {/* Video object key removed from public view for privacy/security */}
       <div className="rounded-lg overflow-hidden bg-slate-900">
         <TalkPlayer className="w-full aspect-video" objectKey={key} autoPlay={false} />
       </div>
