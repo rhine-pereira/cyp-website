@@ -5,109 +5,118 @@ import AuthGuard from '@/app/components/Auth/AuthGuard';
 import Link from 'next/link';
 import { Plus, List, Settings, Image as ImageIcon, Mic as MicIcon, CalendarDays as CalendarIcon } from 'lucide-react';
 
+// Warm Espresso Theme Colors
+const theme = {
+  background: '#1C1917',
+  surface: '#1C1917',
+  primary: '#FB923C',
+  text: '#FAFAFA',
+  border: '#FB923C30',
+};
+
 export default function AdminPage() {
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen" style={{ backgroundColor: theme.background }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600">Quick actions to manage and create forms</p>
+            <h1 className="text-3xl font-bold" style={{ color: theme.text }}>Admin Dashboard</h1>
+            <p className="opacity-70" style={{ color: theme.text }}>Quick actions to manage and create forms</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* Forms */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full">
+            <div className="border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
               <div className="flex items-center mb-4">
-                <ImageIcon className="h-5 w-5 text-purple-600 mr-2" />
-                <h2 className="text-lg font-semibold text-gray-900">Forms</h2>
+                <ImageIcon className="h-5 w-5 mr-2" style={{ color: theme.primary }} />
+                <h2 className="text-lg font-semibold" style={{ color: theme.text }}>Forms</h2>
               </div>
-              <p className="text-gray-600">Build new forms or manage existing ones.</p>
-              <div className="mt-4 flex gap-2">
-                <Link href="/admin/create" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700">
+              <p className="opacity-70 mb-4" style={{ color: theme.text }}>Build new forms or manage existing ones.</p>
+              <div className="flex gap-2">
+                <Link href="/admin/create" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md font-medium transition-colors hover:opacity-90" style={{ backgroundColor: theme.primary, color: '#1C1917' }}>
                   <Plus className="h-4 w-4" /> Create
                 </Link>
-                <Link href="/admin/forms" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-green-600 text-white hover:bg-green-700">
+                <Link href="/admin/forms" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md font-medium transition-colors hover:bg-white/10 border" style={{ borderColor: theme.primary, color: theme.primary }}>
                   <List className="h-4 w-4" /> Manage
                 </Link>
               </div>
             </div>
 
             {/* Gallery */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full">
+            <div className="border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
               <div className="flex items-center mb-4">
-                <ImageIcon className="h-5 w-5 text-sky-600 mr-2" />
-                <h2 className="text-lg font-semibold text-gray-900">Gallery</h2>
+                <ImageIcon className="h-5 w-5 mr-2" style={{ color: theme.primary }} />
+                <h2 className="text-lg font-semibold" style={{ color: theme.text }}>Gallery</h2>
               </div>
-              <p className="text-gray-600">Upload media and manage the gallery.</p>
-              <div className="mt-4 flex gap-2">
-                <Link href="/admin/gallery" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-purple-600 text-white hover:bg-purple-700">
+              <p className="opacity-70 mb-4" style={{ color: theme.text }}>Upload media and manage the gallery.</p>
+              <div className="flex gap-2">
+                <Link href="/admin/gallery" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md font-medium transition-colors hover:opacity-90" style={{ backgroundColor: theme.primary, color: '#1C1917' }}>
                   <Plus className="h-4 w-4" /> Upload
                 </Link>
-                <Link href="/admin/gallery/manage" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-sky-600 text-white hover:bg-sky-700">
+                <Link href="/admin/gallery/manage" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md font-medium transition-colors hover:bg-white/10 border" style={{ borderColor: theme.primary, color: theme.primary }}>
                   <List className="h-4 w-4" /> Manage
                 </Link>
               </div>
             </div>
 
             {/* Talks */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full">
+            <div className="border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
               <div className="flex items-center mb-4">
-                <MicIcon className="h-5 w-5 text-indigo-600 mr-2" />
-                <h2 className="text-lg font-semibold text-gray-900">Talks</h2>
+                <MicIcon className="h-5 w-5 mr-2" style={{ color: theme.primary }} />
+                <h2 className="text-lg font-semibold" style={{ color: theme.text }}>Talks</h2>
               </div>
-              <p className="text-gray-600">Upload sermons/talks and manage metadata.</p>
-              <div className="mt-4 flex gap-2">
-                <Link href="/admin/talks" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-indigo-600 text-white hover:bg-indigo-700">
+              <p className="opacity-70 mb-4" style={{ color: theme.text }}>Upload sermons/talks and manage metadata.</p>
+              <div className="flex gap-2">
+                <Link href="/admin/talks" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md font-medium transition-colors hover:opacity-90" style={{ backgroundColor: theme.primary, color: '#1C1917' }}>
                   <Plus className="h-4 w-4" /> Upload
                 </Link>
-                <Link href="/admin/talks/manage" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-purple-600 text-white hover:bg-purple-700">
+                <Link href="/admin/talks/manage" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md font-medium transition-colors hover:bg-white/10 border" style={{ borderColor: theme.primary, color: theme.primary }}>
                   <List className="h-4 w-4" /> Manage
                 </Link>
               </div>
             </div>
 
             {/* Fundraiser */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full">
+            <div className="border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
               <div className="flex items-center mb-4">
-                <List className="h-5 w-5 text-red-600 mr-2" />
-                <h2 className="text-lg font-semibold text-gray-900">Fundraiser</h2>
+                <List className="h-5 w-5 mr-2" style={{ color: theme.primary }} />
+                <h2 className="text-lg font-semibold" style={{ color: theme.text }}>Fundraiser</h2>
               </div>
-              <p className="text-gray-600">Create or manage fundraiser items.</p>
-              <div className="mt-4 flex gap-2">
-                <Link href="/admin/fundraiser" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700">
+              <p className="opacity-70 mb-4" style={{ color: theme.text }}>Create or manage fundraiser items.</p>
+              <div className="flex gap-2">
+                <Link href="/admin/fundraiser" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md font-medium transition-colors hover:opacity-90" style={{ backgroundColor: theme.primary, color: '#1C1917' }}>
                   <Plus className="h-4 w-4" /> Add Item
                 </Link>
-                <Link href="/admin/fundraiser/manage" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-rose-600 text-white hover:bg-rose-700">
+                <Link href="/admin/fundraiser/manage" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md font-medium transition-colors hover:bg-white/10 border" style={{ borderColor: theme.primary, color: theme.primary }}>
                   <List className="h-4 w-4" /> Manage
                 </Link>
               </div>
             </div>
 
             {/* Events */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full">
+            <div className="border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow h-full" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
               <div className="flex items-center mb-4">
-                <CalendarIcon className="h-5 w-5 text-amber-600 mr-2" />
-                <h2 className="text-lg font-semibold text-gray-900">Events</h2>
+                <CalendarIcon className="h-5 w-5 mr-2" style={{ color: theme.primary }} />
+                <h2 className="text-lg font-semibold" style={{ color: theme.text }}>Events</h2>
               </div>
-              <p className="text-gray-600">Create and manage events, and link them to gallery photos.</p>
-              <div className="mt-4 flex gap-2">
-                <Link href="/admin/events/create" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-amber-600 text-white hover:bg-amber-700">
+              <p className="opacity-70 mb-4" style={{ color: theme.text }}>Create and manage events, and link them to gallery photos.</p>
+              <div className="flex gap-2">
+                <Link href="/admin/events/create" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md font-medium transition-colors hover:opacity-90" style={{ backgroundColor: theme.primary, color: '#1C1917' }}>
                   <Plus className="h-4 w-4" /> New
                 </Link>
-                <Link href="/admin/events" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-amber-700 text-white hover:bg-amber-800">
+                <Link href="/admin/events" className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md font-medium transition-colors hover:bg-white/10 border" style={{ borderColor: theme.primary, color: theme.primary }}>
                   <List className="h-4 w-4" /> Manage
                 </Link>
               </div>
             </div>
 
             <Link href="/admin/admins" className="block">
-              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm h-full">
+              <div className="border rounded-lg p-6 shadow-sm h-full hover:bg-white/5 transition-colors" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
                 <div className="flex items-center mb-4">
-                  <Settings className="h-5 w-5 text-gray-600 mr-2" />
-                  <h2 className="text-lg font-semibold text-gray-900">Manage Admins</h2>
+                  <Settings className="h-5 w-5 mr-2" style={{ color: theme.primary }} />
+                  <h2 className="text-lg font-semibold" style={{ color: theme.text }}>Manage Admins</h2>
                 </div>
-                <p className="text-gray-600">Add or remove administrator accounts.</p>
+                <p className="opacity-70" style={{ color: theme.text }}>Add or remove administrator accounts.</p>
               </div>
             </Link>
           </div>

@@ -61,26 +61,28 @@ export default function EditFormPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#1C1917]">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#FB923C]"></div>
       </div>
     );
   }
 
   if (error || !form) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-700">{error || 'Form not found'}</div>
+      <div className="min-h-screen flex items-center justify-center bg-[#1C1917] text-[#FAFAFA]">{error || 'Form not found'}</div>
     );
   }
 
   return (
     <AuthGuard>
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Edit Form</h1>
-          <p className="text-gray-600">Update your form configuration and save changes</p>
+      <div className="min-h-screen bg-[#1C1917]">
+        <div className="max-w-7xl mx-auto p-6">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-[#FAFAFA]">Edit Form</h1>
+            <p className="text-[#FAFAFA]/70">Update your form configuration and save changes</p>
+          </div>
+          <FormBuilder initialForm={form} theme="espresso" />
         </div>
-        <FormBuilder initialForm={form} />
       </div>
     </AuthGuard>
   );

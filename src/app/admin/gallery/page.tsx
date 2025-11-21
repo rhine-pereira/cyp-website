@@ -5,9 +5,18 @@ import AuthGuard from '@/app/components/Auth/AuthGuard';
 import type { GalleryItem } from '@/app/types/gallery';
 import type { EventItem } from '@/app/types/event';
 
+// Warm Espresso Theme Colors
+const theme = {
+  background: '#1C1917',
+  surface: '#1C1917',
+  primary: '#FB923C',
+  text: '#FAFAFA',
+  border: '#FB923C30',
+};
+
 export default function AdminGalleryUploadPage() {
   const [files, setFiles] = useState<File[]>([]);
-  const [type, setType] = useState<'auto'|'image'|'video'>('auto');
+  const [type, setType] = useState<'auto' | 'image' | 'video'>('auto');
   const [title, setTitle] = useState('');
   const [caption, setCaption] = useState('');
   const [category, setCategory] = useState('general');
@@ -16,9 +25,9 @@ export default function AdminGalleryUploadPage() {
   const [thumbUrl, setThumbUrl] = useState('');
   const [year, setYear] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string|undefined>();
-  const [lastError, setLastError] = useState<string|undefined>();
-  const [statuses, setStatuses] = useState<Record<string, 'queued'|'uploading'|'saved'|'error'>>({});
+  const [message, setMessage] = useState<string | undefined>();
+  const [lastError, setLastError] = useState<string | undefined>();
+  const [statuses, setStatuses] = useState<Record<string, 'queued' | 'uploading' | 'saved' | 'error'>>({});
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [dragActive, setDragActive] = useState(false);
   const [items, setItems] = useState<GalleryItem[]>([]);
@@ -69,7 +78,7 @@ export default function AdminGalleryUploadPage() {
       const evRes = await fetch('/api/events?limit=1000', { cache: 'no-store' });
       const evJson = await evRes.json();
       if (evRes.ok) setEvents((evJson.items as EventItem[]) || []);
-    } catch {}
+    } catch { }
   };
 
   useEffect(() => { void loadItems(); }, []);
@@ -108,7 +117,7 @@ export default function AdminGalleryUploadPage() {
   };
 
   const singlePutUpload = async (
-    { file, fileType, categorySlug, categoryLabel, contentType, year, eventId }: { file: File; fileType: 'image'|'video'; categorySlug: string; categoryLabel: string; contentType: string; year: number; eventId?: string },
+    { file, fileType, categorySlug, categoryLabel, contentType, year, eventId }: { file: File; fileType: 'image' | 'video'; categorySlug: string; categoryLabel: string; contentType: string; year: number; eventId?: string },
     onProgress: (pct: number) => void
   ): Promise<GalleryItem> => {
     const ps = await fetch('/api/gallery/presign', {
@@ -161,7 +170,7 @@ export default function AdminGalleryUploadPage() {
   };
 
   const multipartUpload = async (
-    { file, fileType, categorySlug, categoryLabel, contentType, year, eventId }: { file: File; fileType: 'image'|'video'; categorySlug: string; categoryLabel: string; contentType: string; year: number; eventId?: string },
+    { file, fileType, categorySlug, categoryLabel, contentType, year, eventId }: { file: File; fileType: 'image' | 'video'; categorySlug: string; categoryLabel: string; contentType: string; year: number; eventId?: string },
     onProgress: (pct: number) => void
   ): Promise<GalleryItem> => {
     const createRes = await fetch('/api/gallery/multipart', {
@@ -169,7 +178,7 @@ export default function AdminGalleryUploadPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'create', type: fileType, category: categorySlug, filename: file.name, contentType, year })
     });
-    const created = await createRes.json().catch(()=> ({}));
+    const created = await createRes.json().catch(() => ({}));
     if (!createRes.ok) throw new Error(created?.error || 'Failed to init multipart');
     const { uploadId, key, publicUrl } = created as { uploadId: string; key: string; publicUrl: string };
 
@@ -187,7 +196,7 @@ export default function AdminGalleryUploadPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'parts', key, uploadId, partNumbers: chunk, contentType })
       });
-      const chunkJson = await urlsRes.json().catch(()=> ({}));
+      const chunkJson = await urlsRes.json().catch(() => ({}));
       if (!urlsRes.ok) throw new Error(chunkJson?.error || 'Failed to sign parts');
       Object.assign(urlsJson.urls, chunkJson.urls || {});
     }
@@ -268,9 +277,9 @@ export default function AdminGalleryUploadPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'complete', key, uploadId, parts: partsOut })
     });
-    const completed = await completeRes.json().catch(()=> ({}));
+    const completed = await completeRes.json().catch(() => ({}));
     if (!completeRes.ok) {
-      await fetch('/api/gallery/multipart', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'abort', key, uploadId }) }).catch(()=>{});
+      await fetch('/api/gallery/multipart', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'abort', key, uploadId }) }).catch(() => { });
       throw new Error(completed?.error || 'Failed to complete upload');
     }
 
@@ -304,20 +313,20 @@ export default function AdminGalleryUploadPage() {
       const categoryLabel = category;
       const categorySlug = slugify(categoryLabel);
       if (categorySlug !== category) setCategory(categorySlug);
-      
+
       // Validate category is not a year
       if (!categorySlug || /^\d{4}$/.test(categorySlug)) {
         throw new Error('Category is required and cannot be a year value (e.g., 2025). Please enter a descriptive category.');
       }
-      
+
       // Parse year from input
       const yStr = (year || '').trim();
       const yearNum = yStr ? (parseInt(yStr, 10) || new Date().getFullYear()) : new Date().getFullYear();
-      
+
       // Check if category matches an event
       const matchedEvent = events.find(ev => slugify(ev.title) === categorySlug);
       const eventId = matchedEvent?.id || undefined;
-      
+
       // If video URL is provided, treat as single item regardless of files
       if (videoUrl.trim()) {
         const id = (globalThis.crypto && 'randomUUID' in globalThis.crypto
@@ -349,27 +358,27 @@ export default function AdminGalleryUploadPage() {
       if (!files.length) throw new Error('Select one or more files to upload');
 
       // Bulk upload flow for selected files -> then one metadata save
-      const newStatuses: Record<string, 'queued'|'uploading'|'saved'|'error'> = {};
+      const newStatuses: Record<string, 'queued' | 'uploading' | 'saved' | 'error'> = {};
       files.forEach(f => { newStatuses[f.name] = 'queued'; });
       setStatuses(newStatuses);
       setProgress({});
 
-  const created: GalleryItem[] = [];
+      const created: GalleryItem[] = [];
       const batchSize = 3;
       for (let i = 0; i < files.length; i += batchSize) {
         const batch = files.slice(i, i + batchSize);
         await Promise.all(batch.map(async (f) => {
           try {
             setStatuses(prev => ({ ...prev, [f.name]: 'uploading' }));
-            const fileType: 'image'|'video' = f.type.startsWith('video/') ? 'video' : 'image';
+            const fileType: 'image' | 'video' = f.type.startsWith('video/') ? 'video' : 'image';
             // Use multipart for large files; fallback to single PUT for small ones
             const MULTIPART_THRESHOLD = 50 * 1024 * 1024; // 50MB
             if (f.size >= MULTIPART_THRESHOLD) {
-              const item = await multipartUpload({ file: f, fileType, categorySlug, categoryLabel, contentType: f.type || 'application/octet-stream', year: yearNum, eventId }, (pct)=> setProgress(prev=>({ ...prev, [f.name]: pct })));
+              const item = await multipartUpload({ file: f, fileType, categorySlug, categoryLabel, contentType: f.type || 'application/octet-stream', year: yearNum, eventId }, (pct) => setProgress(prev => ({ ...prev, [f.name]: pct })));
               created.push(item);
               setStatuses(prev => ({ ...prev, [f.name]: 'saved' }));
             } else {
-              const single = await singlePutUpload({ file: f, fileType, categorySlug, categoryLabel, contentType: f.type || 'application/octet-stream', year: yearNum, eventId }, (pct)=> setProgress(prev=>({ ...prev, [f.name]: pct })));
+              const single = await singlePutUpload({ file: f, fileType, categorySlug, categoryLabel, contentType: f.type || 'application/octet-stream', year: yearNum, eventId }, (pct) => setProgress(prev => ({ ...prev, [f.name]: pct })));
               created.push(single);
               setStatuses(prev => ({ ...prev, [f.name]: 'saved' }));
             }
@@ -399,35 +408,38 @@ export default function AdminGalleryUploadPage() {
     }
   };
 
+  const inputClass = "mt-1 w-full border border-[#FB923C]/30 focus:border-[#FB923C] focus:ring-[#FB923C] rounded-md px-3 py-2 text-[#FAFAFA] bg-white/5 placeholder:text-[#FAFAFA]/30";
+  const labelClass = "block text-sm font-medium text-[#FAFAFA]/90";
+
   return (
     <AuthGuard>
-      <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
+      <div className="min-h-[calc(100vh-4rem)] bg-[#1C1917]">
         <div className="max-w-4xl mx-auto p-6">
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-            <div className="border-b border-gray-200 rounded-t-xl p-6">
-              <h1 className="text-2xl font-bold tracking-tight text-gray-900">Gallery Uploads</h1>
-              <p className="text-sm text-gray-600 mt-1">Upload images or videos and tag them by event.</p>
+          <div className="bg-[#1C1917] border border-[#FB923C]/30 rounded-xl shadow-sm">
+            <div className="border-b border-[#FB923C]/30 rounded-t-xl p-6">
+              <h1 className="text-2xl font-bold tracking-tight text-[#FAFAFA]">Gallery Uploads</h1>
+              <p className="text-sm text-[#FAFAFA]/70 mt-1">Upload images or videos and tag them by event.</p>
             </div>
 
             <form onSubmit={onSubmit} className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900">Type</label>
-                  <select value={type} onChange={(e)=>setType(e.target.value as any)} className="mt-1 w-full border border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white">
+                  <label className={labelClass}>Type</label>
+                  <select value={type} onChange={(e) => setType(e.target.value as any)} className={inputClass} style={{ backgroundColor: '#1C1917' }}>
                     <option value="auto">Auto (mixed)</option>
                     <option value="image">Image only</option>
                     <option value="video">Video only</option>
                   </select>
                 </div>
                 <div className="md:col-span-2 relative">
-                  <label className="block text-sm font-medium text-gray-900">Category / Event</label>
+                  <label className={labelClass}>Category / Event</label>
                   <input
                     list="existing-categories"
                     value={category}
-                    onFocus={()=> { setCatOpen(true); setCategoryQuery(''); }}
-                    onChange={(e)=>onCategoryChange(e.target.value)}
-                    onBlur={(e)=>{ const v=e.target.value; setTimeout(()=>{ setCatOpen(false); onCategoryBlur(v); }, 100); }}
-                    className="mt-1 w-full border border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder:text-gray-500 bg-white"
+                    onFocus={() => { setCatOpen(true); setCategoryQuery(''); }}
+                    onChange={(e) => onCategoryChange(e.target.value)}
+                    onBlur={(e) => { const v = e.target.value; setTimeout(() => { setCatOpen(false); onCategoryBlur(v); }, 100); }}
+                    className={inputClass}
                     placeholder="e.g. retreat-2025"
                   />
                   <datalist id="existing-categories">
@@ -436,107 +448,96 @@ export default function AdminGalleryUploadPage() {
                     ))}
                   </datalist>
                   {catOpen && filteredCategories.length > 0 && (
-                    <div className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md border border-gray-200 bg-white text-gray-900 shadow">
+                    <div className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md border border-[#FB923C]/30 bg-[#1C1917] text-[#FAFAFA] shadow">
                       {filteredCategories.map((opt) => (
                         <button
                           key={opt.value}
                           type="button"
-                          onMouseDown={()=>{ setCategory(opt.type === 'event' ? opt.label.replace(' (Event)', '') : opt.value); setCategoryQuery(''); setCatOpen(false); }}
-                          className="block w-full text-left px-3 py-2 text-sm text-gray-900 hover:bg-gray-100"
+                          onMouseDown={() => { setCategory(opt.type === 'event' ? opt.label.replace(' (Event)', '') : opt.value); setCategoryQuery(''); setCatOpen(false); }}
+                          className="block w-full text-left px-3 py-2 text-sm text-[#FAFAFA] hover:bg-white/10"
                         >
                           {opt.label}
                         </button>
                       ))}
                     </div>
                   )}
-                  <div className="mt-1 text-xs text-gray-500">Pick an existing event from the list or type a new one. We’ll auto-slugify it.</div>
-                  <div className="mt-1 text-xs text-gray-500">Will save as: <span className="font-mono text-gray-900">{categoryPreview || '—'}</span></div>
+                  <div className="mt-1 text-xs text-[#FAFAFA]/50">Pick an existing event from the list or type a new one. We’ll auto-slugify it.</div>
+                  <div className="mt-1 text-xs text-[#FAFAFA]/50">Will save as: <span className="font-mono text-[#FAFAFA]">{categoryPreview || '—'}</span></div>
                 </div>
               </div>
 
-              <div className="rounded-lg border border-gray-200 p-4 bg-white/50">
-                <div className="mb-3 text-sm font-medium text-gray-700">Details</div>
+              <div className="rounded-lg border border-[#FB923C]/30 p-4 bg-white/5">
+                <div className="mb-3 text-sm font-medium text-[#FAFAFA]/90">Details</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-900">Title</label>
-                    <input value={title} onChange={(e)=>setTitle(e.target.value)} className="mt-1 w-full border border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white" />
+                    <label className={labelClass}>Title</label>
+                    <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-900">Caption</label>
-                    <input value={caption} onChange={(e)=>setCaption(e.target.value)} className="mt-1 w-full border border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white" />
+                    <label className={labelClass}>Caption</label>
+                    <input value={caption} onChange={(e) => setCaption(e.target.value)} className={inputClass} />
                   </div>
                 </div>
               </div>
 
               {type === 'video' ? (
                 <div>
-                  <label className="block text-sm font-medium text-gray-900">Video URL (YouTube/Vimeo or direct)</label>
-                  <input value={videoUrl} onChange={(e)=>setVideoUrl(e.target.value)} className="mt-1 w-full border border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder:text-gray-500 bg-white" placeholder="https://youtu.be/..." />
+                  <label className={labelClass}>Video URL (YouTube/Vimeo or direct)</label>
+                  <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} className={inputClass} placeholder="https://youtu.be/..." />
                 </div>
               ) : null}
 
               <div>
-                <label className="block text-sm font-medium text-gray-900">{type==='image'? 'Image Files': type==='video' ? 'Video Files' : 'Image or Video Files'} (drag & drop or select multiple)</label>
+                <label className={labelClass}>{type === 'image' ? 'Image Files' : type === 'video' ? 'Video Files' : 'Image or Video Files'} (drag & drop or select multiple)</label>
                 <div
-                  onDragOver={(e)=>{ e.preventDefault(); e.stopPropagation(); setDragActive(true); }}
-                  onDragEnter={(e)=>{ e.preventDefault(); e.stopPropagation(); setDragActive(true); }}
-                  onDragLeave={(e)=>{ e.preventDefault(); e.stopPropagation(); setDragActive(false); }}
-                  onDrop={(e)=>{ e.preventDefault(); e.stopPropagation(); setDragActive(false); const dropped = Array.from(e.dataTransfer.files || []); const accepted = dropped.filter(f=> type==='image'? f.type.startsWith('image/') : type==='video'? f.type.startsWith('video/') : (f.type.startsWith('image/') || f.type.startsWith('video/'))); setFiles(prev=>[...prev, ...accepted]); }}
-                  className={`mt-2 rounded-md border-2 ${dragActive? 'border-sky-500 bg-sky-50':'border-dashed border-gray-300 bg-gray-50'} p-6 text-center text-gray-900`}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(true); }}
+                  onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(true); }}
+                  onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); }}
+                  onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); const dropped = Array.from(e.dataTransfer.files || []); const accepted = dropped.filter(f => type === 'image' ? f.type.startsWith('image/') : type === 'video' ? f.type.startsWith('video/') : (f.type.startsWith('image/') || f.type.startsWith('video/'))); setFiles(prev => [...prev, ...accepted]); }}
+                  className={`mt-2 rounded-md border-2 ${dragActive ? 'border-[#FB923C] bg-[#FB923C]/10' : 'border-dashed border-[#FB923C]/30 bg-white/5'} p-6 text-center text-[#FAFAFA]`}
                 >
                   <div className="mb-3 font-medium">Drop files here</div>
-                  <div className="text-sm text-gray-600">or</div>
+                  <div className="text-sm text-[#FAFAFA]/70">or</div>
                   <div className="mt-3 flex items-center justify-center gap-3">
-                    <label className="inline-block cursor-pointer px-4 py-2 rounded-md bg-gray-900 text-white hover:bg-black">
+                    <label className="inline-block cursor-pointer px-4 py-2 rounded-md bg-[#FB923C] text-[#1C1917] hover:bg-[#FCD34D] font-semibold">
                       Browse files
                       <input
                         type="file"
                         multiple
-                        accept={type==='image'? 'image/*': type==='video' ? 'video/*' : 'image/*,video/*'}
-                        onChange={(e)=>setFiles(prev=>[...prev, ...Array.from(e.target.files || [])])}
+                        accept={type === 'image' ? 'image/*' : type === 'video' ? 'video/*' : 'image/*,video/*'}
+                        onChange={(e) => setFiles(prev => [...prev, ...Array.from(e.target.files || [])])}
                         className="hidden"
                       />
                     </label>
-                    {/* <button
-                      type="button"
-                      onClick={() => window.location.href = '/admin/google-photos'}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-white border-2 border-gray-300 text-gray-900 hover:bg-gray-50 hover:border-gray-400"
-                    >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2L14.5 9.5H22L16 14L18.5 21.5L12 17L5.5 21.5L8 14L2 9.5H9.5L12 2Z" fill="currentColor" opacity="0.2"/>
-                        <path d="M12 2L14.5 9.5H22L16 14L18.5 21.5L12 17L5.5 21.5L8 14L2 9.5H9.5L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      Import from Google Photos
-                    </button> */}
                   </div>
                 </div>
                 {!!files.length && (
                   <div className="mt-4">
-                    <div className="mb-2 text-sm text-gray-700">{files.length} file(s) selected <button type="button" onClick={()=>setFiles([])} className="ml-2 underline">Clear</button></div>
+                    <div className="mb-2 text-sm text-[#FAFAFA]/70">{files.length} file(s) selected <button type="button" onClick={() => setFiles([])} className="ml-2 underline text-[#FB923C]">Clear</button></div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {files.map((f) => (
-                        <div key={f.name} className="relative rounded-md border border-gray-200 bg-gray-50 p-2">
-                          <button type="button" onClick={() => removeFile(f.name)} className="absolute right-1 top-1 inline-flex items-center justify-center rounded text-xs px-2 py-1 bg-white border border-gray-300 text-gray-700 hover:bg-gray-100">Remove</button>
+                        <div key={f.name} className="relative rounded-md border border-[#FB923C]/30 bg-white/5 p-2">
+                          <button type="button" onClick={() => removeFile(f.name)} className="absolute right-1 top-1 inline-flex items-center justify-center rounded text-xs px-2 py-1 bg-[#1C1917] border border-[#FB923C]/30 text-[#FAFAFA] hover:bg-white/10">Remove</button>
                           {f.type.startsWith('image/') ? (
                             <img src={URL.createObjectURL(f)} alt={f.name} className="h-24 w-full object-cover rounded-lg" />
                           ) : (
-                            <div className="h-24 w-full flex items-center justify-center text-xs text-gray-900 bg-white rounded">
+                            <div className="h-24 w-full flex items-center justify-center text-xs text-[#FAFAFA] bg-white/5 rounded">
                               {f.name}
                             </div>
                           )}
                           <div className="mt-2">
                             <div className="text-xs flex items-center justify-between">
-                              <span className="truncate max-w-[8rem]" title={f.name}>{f.name}</span>
+                              <span className="truncate max-w-[8rem] text-[#FAFAFA]/70" title={f.name}>{f.name}</span>
                               <span className="font-medium">
-                                {statuses[f.name] === 'uploading' && <span className="text-gray-700">Uploading… {Math.floor(progress[f.name] || 0)}%</span>}
-                                {statuses[f.name] === 'saved' && <span className="text-green-700">Saved</span>}
-                                {statuses[f.name] === 'error' && <span className="text-red-700">Error</span>}
-                                {!statuses[f.name] && <span className="text-gray-500">Queued</span>}
+                                {statuses[f.name] === 'uploading' && <span className="text-[#FB923C]">Uploading… {Math.floor(progress[f.name] || 0)}%</span>}
+                                {statuses[f.name] === 'saved' && <span className="text-green-500">Saved</span>}
+                                {statuses[f.name] === 'error' && <span className="text-red-500">Error</span>}
+                                {!statuses[f.name] && <span className="text-[#FAFAFA]/50">Queued</span>}
                               </span>
                             </div>
                             {statuses[f.name] === 'uploading' && (
-                              <div className="mt-1 h-2 w-full bg-gray-200 rounded">
-                                <div className="h-2 bg-gray-900 rounded" style={{ width: `${Math.max(1, Math.min(100, Math.floor(progress[f.name] || 0))) }%` }} />
+                              <div className="mt-1 h-2 w-full bg-white/10 rounded">
+                                <div className="h-2 bg-[#FB923C] rounded" style={{ width: `${Math.max(1, Math.min(100, Math.floor(progress[f.name] || 0)))}%` }} />
                               </div>
                             )}
                           </div>
@@ -548,25 +549,25 @@ export default function AdminGalleryUploadPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900">Year</label>
-                <input value={year} onChange={(e)=>setYear(e.target.value)} type="number" className="mt-1 w-full border border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white" />
+                <label className={labelClass}>Year</label>
+                <input value={year} onChange={(e) => setYear(e.target.value)} type="number" className={inputClass} />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900">Thumbnail URL (for videos)</label>
-                <input value={thumbUrl} onChange={(e)=>setThumbUrl(e.target.value)} className="mt-1 w-full border border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder:text-gray-500 bg-white" placeholder="https://.../thumb.jpg" />
+                <label className={labelClass}>Thumbnail URL (for videos)</label>
+                <input value={thumbUrl} onChange={(e) => setThumbUrl(e.target.value)} className={inputClass} placeholder="https://.../thumb.jpg" />
               </div>
 
               <div className="flex items-center gap-3">
-                <button type="submit" disabled={loading} className="px-5 py-3 rounded-md bg-gray-900 text-white hover:bg-black disabled:opacity-50 shadow">
-                  {loading? 'Working…':'Save to Gallery'}
+                <button type="submit" disabled={loading} className="px-5 py-3 rounded-md bg-[#FB923C] text-[#1C1917] hover:bg-[#FCD34D] disabled:opacity-50 shadow font-semibold">
+                  {loading ? 'Working…' : 'Save to Gallery'}
                 </button>
-                {message ? <div className="text-sm text-gray-700">{message}</div> : null}
+                {message ? <div className="text-sm text-[#FAFAFA]/70">{message}</div> : null}
               </div>
             </form>
           </div>
 
-          
+
         </div>
       </div>
     </AuthGuard>

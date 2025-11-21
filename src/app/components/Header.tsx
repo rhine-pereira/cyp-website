@@ -19,19 +19,26 @@ const navItems = [
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+
+  // Warm Espresso Theme Colors
+  // background: '#1C1917'
+  // primary: '#FB923C'
+  // text: '#FAFAFA'
+  // border: '#FB923C30'
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-200/70 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/70 relative">
+    <header className="sticky top-0 z-50 w-full border-b border-[#FB923C]/30 bg-[#1C1917]/80 backdrop-blur supports-[backdrop-filter]:bg-[#1C1917]/70 relative">
       <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 sm:gap-3" aria-label="CYP Home">
           <Image
-            src="/CYP_logo.png"
+            src="/cyplogo_circle.png"
             alt="CYP logo"
             width={28}
             height={28}
             className="rounded-md"
             priority
           />
-          <span className="max-w-[50vw] truncate text-sm font-semibold uppercase tracking-[-0.02em] text-sky-700 sm:max-w-none sm:text-base">
+          <span className="max-w-[50vw] truncate text-sm font-semibold uppercase tracking-[-0.02em] text-[#FB923C] sm:max-w-none sm:text-base">
             Christian Youth in Power
           </span>
         </Link>
@@ -41,7 +48,7 @@ export default function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-medium text-gray-700 transition-colors hover:text-sky-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 rounded"
+              className="text-sm font-medium text-[#FAFAFA] transition-colors hover:text-[#FB923C] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FB923C] rounded"
             >
               {item.label}
             </Link>
@@ -59,7 +66,7 @@ export default function Header() {
         <button
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((v) => !v)}
-          className="inline-flex items-center justify-center rounded md:hidden p-2 text-slate-700 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+          className="inline-flex items-center justify-center rounded md:hidden p-2 text-[#FAFAFA] hover:bg-[#FB923C]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FB923C]"
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
@@ -72,7 +79,7 @@ export default function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="md:hidden absolute left-0 right-0 top-full border-t border-gray-100/60 bg-white/95 backdrop-blur shadow-sm"
+            className="md:hidden absolute left-0 right-0 top-full border-t border-[#FB923C]/30 bg-[#1C1917]/95 backdrop-blur shadow-sm"
             role="dialog"
             aria-label="Mobile navigation"
           >
@@ -83,12 +90,12 @@ export default function Header() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className="rounded px-2 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-slate-50 hover:text-sky-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+                    className="rounded px-2 py-2 text-sm font-medium text-[#FAFAFA] transition-colors hover:bg-[#FB923C]/10 hover:text-[#FB923C] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FB923C]"
                   >
                     {item.label}
                   </Link>
                 ))}
-                <Button asChild className="mt-2 bg-sky-600 text-white hover:bg-sky-700">
+                <Button asChild className="mt-2 bg-[#FB923C] text-[#1C1917] hover:bg-[#FCD34D] hover:text-black border-none">
                   <Link href="/join" onClick={() => setOpen(false)} aria-label="Join Christian Youth in Power">
                     Join CYP
                   </Link>

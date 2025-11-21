@@ -3,6 +3,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AuthGuard from "@/app/components/Auth/AuthGuard";
 
+// Warm Espresso Theme Colors
+const theme = {
+  background: '#1C1917',
+  surface: '#1C1917',
+  primary: '#FB923C',
+  text: '#FAFAFA',
+  border: '#FB923C30',
+};
+
 function slugify(v: string) {
   return (v || "")
     .toLowerCase()
@@ -176,55 +185,59 @@ export default function AdminTalksUploadPage() {
     }
   };
 
+  const inputClass = "mt-1 w-full border border-[#FB923C]/30 focus:border-[#FB923C] focus:ring-[#FB923C] rounded-md px-3 py-2 text-[#FAFAFA] bg-white/5 placeholder:text-[#FAFAFA]/30";
+  const labelClass = "block text-sm font-medium text-[#FAFAFA]/90";
+  const fileInputClass = "block w-full text-sm text-[#FAFAFA] file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#FB923C] file:text-[#1C1917] hover:file:bg-[#FCD34D]";
+
   return (
     <AuthGuard>
-      <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
+      <div className="min-h-[calc(100vh-4rem)] bg-[#1C1917]">
         <div className="max-w-4xl mx-auto p-6">
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-            <div className="border-b border-gray-200 rounded-t-xl p-6">
-              <h1 className="text-2xl font-bold tracking-tight text-gray-900">Talks Upload</h1>
-              <p className="text-sm text-gray-600 mt-1">Upload a sermon/talk to the talks bucket.</p>
+          <div className="bg-[#1C1917] border border-[#FB923C]/30 rounded-xl shadow-sm">
+            <div className="border-b border-[#FB923C]/30 rounded-t-xl p-6">
+              <h1 className="text-2xl font-bold tracking-tight text-[#FAFAFA]">Talks Upload</h1>
+              <p className="text-sm text-[#FAFAFA]/70 mt-1">Upload a sermon/talk to the talks bucket.</p>
             </div>
 
             <form onSubmit={onSubmit} className="p-6 space-y-6">
-              <div className="rounded-lg border border-gray-200 p-4 bg-white/50">
-                <div className="mb-3 text-sm font-medium text-gray-700">Details</div>
+              <div className="rounded-lg border border-[#FB923C]/30 p-4 bg-white/5">
+                <div className="mb-3 text-sm font-medium text-[#FAFAFA]/90">Details</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-900">Title</label>
-                    <input value={title} onChange={(e)=>setTitle(e.target.value)} className="mt-1 w-full border border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white" />
+                    <label className={labelClass}>Title</label>
+                    <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-900">Speaker</label>
-                    <input value={speaker} onChange={(e)=>setSpeaker(e.target.value)} className="mt-1 w-full border border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white" />
+                    <label className={labelClass}>Speaker</label>
+                    <input value={speaker} onChange={(e) => setSpeaker(e.target.value)} className={inputClass} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-900">Date</label>
-                    <input type="date" value={date} onChange={(e)=>setDate(e.target.value)} placeholder="dd-mm-yyyy" className="mt-1 w-full border border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white" />
+                    <label className={labelClass}>Date</label>
+                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} placeholder="dd-mm-yyyy" className={inputClass} style={{ colorScheme: 'dark' }} />
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-lg border border-gray-200 p-4 bg-white/50">
-                <div className="mb-3 text-sm font-medium text-gray-700">Series</div>
+              <div className="rounded-lg border border-[#FB923C]/30 p-4 bg-white/5">
+                <div className="mb-3 text-sm font-medium text-[#FAFAFA]/90">Series</div>
                 <div className="flex flex-col md:flex-row md:items-center gap-3">
-                  <label className="inline-flex items-center gap-2 text-sm text-gray-900">
-                    <input type="radio" name="series" checked={seriesMode==='none'} onChange={()=>setSeriesMode('none')} />
+                  <label className="inline-flex items-center gap-2 text-sm text-[#FAFAFA]">
+                    <input type="radio" name="series" checked={seriesMode === 'none'} onChange={() => setSeriesMode('none')} className="text-[#FB923C] focus:ring-[#FB923C]" />
                     None
                   </label>
-                  <label className="inline-flex items-center gap-2 text-sm text-gray-900">
-                    <input type="radio" name="series" checked={seriesMode==='new'} onChange={()=>setSeriesMode('new')} />
+                  <label className="inline-flex items-center gap-2 text-sm text-[#FAFAFA]">
+                    <input type="radio" name="series" checked={seriesMode === 'new'} onChange={() => setSeriesMode('new')} className="text-[#FB923C] focus:ring-[#FB923C]" />
                     New
                   </label>
-                  {seriesMode==='new' && (
-                    <input value={seriesNew} onChange={(e)=>setSeriesNew(e.target.value)} placeholder="e.g. Romans" className="flex-1 border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white" />
+                  {seriesMode === 'new' && (
+                    <input value={seriesNew} onChange={(e) => setSeriesNew(e.target.value)} placeholder="e.g. Romans" className={`flex-1 ${inputClass}`} />
                   )}
-                  <label className="inline-flex items-center gap-2 text-sm text-gray-900">
-                    <input type="radio" name="series" checked={seriesMode==='existing'} onChange={()=>setSeriesMode('existing')} />
+                  <label className="inline-flex items-center gap-2 text-sm text-[#FAFAFA]">
+                    <input type="radio" name="series" checked={seriesMode === 'existing'} onChange={() => setSeriesMode('existing')} className="text-[#FB923C] focus:ring-[#FB923C]" />
                     Existing
                   </label>
-                  {seriesMode==='existing' && (
-                    <select value={seriesExisting} onChange={(e)=>setSeriesExisting(e.target.value)} className="flex-1 border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white">
+                  {seriesMode === 'existing' && (
+                    <select value={seriesExisting} onChange={(e) => setSeriesExisting(e.target.value)} className={`flex-1 ${inputClass}`} style={{ backgroundColor: '#1C1917' }}>
                       <option value="">Select series…</option>
                       {seriesList.map((s) => (
                         <option key={s} value={s}>{s}</option>
@@ -234,40 +247,40 @@ export default function AdminTalksUploadPage() {
                 </div>
               </div>
 
-              <div className="rounded-lg border border-gray-200 p-4 bg-white/50">
-                <div className="mb-3 text-sm font-medium text-gray-700">Files</div>
+              <div className="rounded-lg border border-[#FB923C]/30 p-4 bg-white/5">
+                <div className="mb-3 text-sm font-medium text-[#FAFAFA]/90">Files</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-900">Thumbnail (optional)</label>
-                    <div className="mt-1 rounded-md border border-gray-300 p-3 bg-white">
-                      <input type="file" accept="image/*" onChange={(e)=>setThumbFile((e.target.files && e.target.files[0]) || null)} className="block w-full text-sm text-gray-900 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-900 hover:file:bg-gray-200" />
+                    <label className={labelClass}>Thumbnail (optional)</label>
+                    <div className="mt-1 rounded-md border border-[#FB923C]/30 p-3 bg-white/5">
+                      <input type="file" accept="image/*" onChange={(e) => setThumbFile((e.target.files && e.target.files[0]) || null)} className={fileInputClass} />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-900">Video/Audio File</label>
-                    <div className="mt-1 rounded-md border border-gray-300 p-3 bg-white">
-                      <input type="file" accept="video/*,audio/*" onChange={(e)=>setMediaFile((e.target.files && e.target.files[0]) || null)} className="block w-full text-sm text-gray-900 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-900 hover:file:bg-gray-200" />
+                    <label className={labelClass}>Video/Audio File</label>
+                    <div className="mt-1 rounded-md border border-[#FB923C]/30 p-3 bg-white/5">
+                      <input type="file" accept="video/*,audio/*" onChange={(e) => setMediaFile((e.target.files && e.target.files[0]) || null)} className={fileInputClass} />
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-lg border border-gray-200 p-4 bg-white/50">
-                <label className="block text-sm font-medium text-gray-900">Summary (Markdown supported)</label>
-                <textarea value={summary} onChange={(e)=>setSummary(e.target.value)} rows={8} className="mt-1 w-full border border-gray-300 focus:border-gray-500 focus:ring-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white whitespace-pre-wrap min-h-40" placeholder="Add points with - bullets and line breaks" />
+              <div className="rounded-lg border border-[#FB923C]/30 p-4 bg-white/5">
+                <label className={labelClass}>Summary (Markdown supported)</label>
+                <textarea value={summary} onChange={(e) => setSummary(e.target.value)} rows={8} className={`${inputClass} whitespace-pre-wrap min-h-40`} placeholder="Add points with - bullets and line breaks" />
                 {progress > 0 && progress < 100 && (
-                  <div className="mt-2 h-2 w-full bg-gray-200 rounded">
-                    <div className="h-2 bg-gray-900 rounded" style={{ width: `${Math.floor(progress)}%` }} />
+                  <div className="mt-2 h-2 w-full bg-white/10 rounded">
+                    <div className="h-2 bg-[#FB923C] rounded" style={{ width: `${Math.floor(progress)}%` }} />
                   </div>
                 )}
               </div>
 
               <div className="flex items-center gap-3">
-                <button type="submit" disabled={loading} className="px-5 py-3 rounded-md bg-gray-900 text-white hover:bg-black disabled:opacity-50 shadow">
+                <button type="submit" disabled={loading} className="px-5 py-3 rounded-md bg-[#FB923C] text-[#1C1917] hover:bg-[#FCD34D] disabled:opacity-50 shadow font-semibold">
                   {loading ? "Uploading…" : "Upload Talk"}
                 </button>
-                {message ? <div className="text-sm text-green-700">{message}</div> : null}
-                {error ? <div className="text-sm text-red-700">{error}</div> : null}
+                {message ? <div className="text-sm text-green-500">{message}</div> : null}
+                {error ? <div className="text-sm text-red-500">{error}</div> : null}
               </div>
             </form>
           </div>

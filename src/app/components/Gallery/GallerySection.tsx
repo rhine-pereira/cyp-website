@@ -13,6 +13,7 @@ export type GallerySectionProps = {
   showViewFullLink?: boolean;
   viewFullHref?: string; // if not provided, will default to /gallery/{category}
   gridClassName?: string;
+  theme?: 'light' | 'dark';
 };
 
 export default function GallerySection({
@@ -23,12 +24,20 @@ export default function GallerySection({
   showViewFullLink = true,
   viewFullHref,
   gridClassName,
+  theme = 'light',
 }: GallerySectionProps) {
   const [items, setItems] = useState<GalleryItem[]>(initialItems);
   const [cursor, setCursor] = useState<string | undefined>(initialCursor);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
+
+  // Theme-based styles
+  const isDark = theme === 'dark';
+  const textColor = isDark ? 'text-gray-100' : 'text-gray-900';
+  const subTextColor = isDark ? 'text-gray-300' : 'text-gray-700';
+  const captionColor = isDark ? 'text-gray-400' : 'text-gray-600';
+  const linkHoverColor = isDark ? 'hover:text-white' : 'hover:text-gray-900';
 
   // Fetch initial if SSR did not provide
   useEffect(() => {
@@ -79,9 +88,9 @@ export default function GallerySection({
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-gray-900">{heading}</h2>
+        <h2 className={`text-xl font-semibold ${textColor}`}>{heading}</h2>
         {showViewFullLink && (
-          <Link href={viewFullHref || `/gallery/${encodeURIComponent(category)}`} className="text-sm underline text-gray-700 hover:text-gray-900">View full gallery</Link>
+          <Link href={viewFullHref || `/gallery/${encodeURIComponent(category)}`} className={`text-sm underline ${subTextColor} ${linkHoverColor}`}>View full gallery</Link>
         )}
       </div>
       <div className={"grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 " + (gridClassName || '')}>
@@ -103,19 +112,19 @@ export default function GallerySection({
                 </div>
               </div>
             )}
-            {it.caption ? <div className="mt-2 text-sm text-gray-600">{it.caption}</div> : null}
+            {it.caption ? <div className={`mt-2 text-sm ${captionColor}`}>{it.caption}</div> : null}
           </div>
         ))}
       </div>
       <div className="flex justify-center mt-6">
         {cursor ? (
-          <button onClick={loadMore} disabled={loading} className="px-5 py-3 rounded-xl bg-gray-900 text-white disabled:opacity-50 flex items-center gap-3">
-            {loading && <Spinner label="" size={20} ringWidth={3} trackClassName="border-white/40" ringClassName="border-t-white" />}
+          <button onClick={loadMore} disabled={loading} className={`px-5 py-3 rounded-xl ${isDark ? 'bg-white text-black hover:bg-gray-200' : 'bg-gray-900 text-white hover:bg-gray-800'} disabled:opacity-50 flex items-center gap-3 transition-colors`}>
+            {loading && <Spinner label="" size={20} ringWidth={3} trackClassName={isDark ? "border-black/20" : "border-white/40"} ringClassName={isDark ? "border-t-black" : "border-t-white"} />}
             {loading ? 'Loading…' : 'Load more'}
           </button>
         ) : (
-          <div className="text-gray-500 text-sm">
-            {loading ? <Spinner label="Loading…" size={28} ringWidth={3} trackClassName="border-gray-300" ringClassName="border-t-gray-700" /> : (items.length === 0 ? 'No items found' : 'No more items')}
+          <div className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+            {loading ? <Spinner label="Loading…" size={28} ringWidth={3} trackClassName={isDark ? "border-gray-700" : "border-gray-300"} ringClassName={isDark ? "border-t-gray-300" : "border-t-gray-700"} labelClassName={isDark ? "text-gray-400" : "text-gray-700"} /> : (items.length === 0 ? 'No items found' : 'No more items')}
           </div>
         )}
       </div>

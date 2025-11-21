@@ -9,6 +9,7 @@ type SpinnerProps = {
   label?: string;
   trackClassName?: string; // e.g., 'border-gray-300'
   ringClassName?: string; // e.g., 'border-t-gray-900'
+  labelClassName?: string;
 };
 
 export default function Spinner({
@@ -18,6 +19,7 @@ export default function Spinner({
   label = 'Loading',
   trackClassName = 'border-gray-300',
   ringClassName = 'border-t-gray-900',
+  labelClassName = 'text-gray-700',
 }: SpinnerProps) {
   const style: React.CSSProperties = { width: size, height: size, borderWidth: ringWidth };
   return (
@@ -27,7 +29,7 @@ export default function Spinner({
         style={style}
         aria-hidden="true"
       />
-      {label ? <div className="mt-3 text-sm text-gray-700">{label}</div> : null}
+      {label ? <div className={`mt-3 text-sm ${labelClassName}`}>{label}</div> : null}
     </div>
   );
 }

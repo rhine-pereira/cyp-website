@@ -59,7 +59,7 @@ export default function ManageTalksPage() {
   async function loadSummary(talkId: string) {
     const talk = talks.find((t) => t.id === talkId || t.key === talkId);
     if (!talk) return '';
-    
+
     try {
       const key = talk.key || talk.id;
       const dir = key.split('/').slice(0, -1).join('/');
@@ -195,96 +195,98 @@ export default function ManageTalksPage() {
     }
   }
 
+  const inputClass = "w-full border border-[#FB923C]/30 rounded-md px-3 py-2 text-[#FAFAFA] bg-white/5 placeholder:text-[#FAFAFA]/30 focus:border-[#FB923C] focus:ring-[#FB923C]";
+  const labelClass = "block text-sm font-medium text-[#FAFAFA]/90 mb-1";
+
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#1C1917]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-6">
             <Link
               href="/admin"
-              className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4"
+              className="inline-flex items-center gap-2 text-sm text-[#FAFAFA]/70 hover:text-[#FB923C] mb-4"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Admin
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900">Manage Talks</h1>
-            <p className="text-gray-600 mt-1">Edit or delete existing talks</p>
+            <h1 className="text-3xl font-bold text-[#FAFAFA]">Manage Talks</h1>
+            <p className="text-[#FAFAFA]/70 mt-1">Edit or delete existing talks</p>
           </div>
 
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+            <div className="mb-4 p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-400">
               {error}
             </div>
           )}
 
           {successMessage && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
+            <div className="mb-4 p-4 bg-green-900/20 border border-green-500/30 rounded-lg text-green-400">
               {successMessage}
             </div>
           )}
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              <Loader2 className="h-8 w-8 animate-spin text-[#FB923C]" />
             </div>
           ) : talks.length === 0 ? (
-            <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
-              <p className="text-gray-600">No talks found</p>
+            <div className="bg-[#1C1917] border border-[#FB923C]/30 rounded-lg p-12 text-center">
+              <p className="text-[#FAFAFA]/70">No talks found</p>
               <Link
                 href="/admin/talks"
-                className="mt-4 inline-block text-indigo-600 hover:text-indigo-700"
+                className="mt-4 inline-block text-[#FB923C] hover:text-[#FCD34D]"
               >
                 Upload your first talk
               </Link>
             </div>
           ) : (
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="bg-[#1C1917] border border-[#FB923C]/30 rounded-lg shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+                  <thead className="bg-white/5 border-b border-[#FB923C]/30">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[#FAFAFA]/70 uppercase tracking-wider">
                         Title
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[#FAFAFA]/70 uppercase tracking-wider">
                         Speaker
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[#FAFAFA]/70 uppercase tracking-wider">
                         Date
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[#FAFAFA]/70 uppercase tracking-wider">
                         Series
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[#FAFAFA]/70 uppercase tracking-wider">
                         Type
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-right text-xs font-medium text-[#FAFAFA]/70 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-[#FB923C]/10">
                     {talks.map((talk) => (
-                      <tr key={talk.id} className="hover:bg-gray-50">
+                      <tr key={talk.id} className="hover:bg-white/5">
                         <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900">{talk.title}</div>
+                          <div className="text-sm font-medium text-[#FAFAFA]">{talk.title}</div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-gray-600">{talk.speaker || 'N/A'}</div>
+                          <div className="text-sm text-[#FAFAFA]/70">{talk.speaker || 'N/A'}</div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-gray-600">{formatDate(talk.date)}</div>
+                          <div className="text-sm text-[#FAFAFA]/70">{formatDate(talk.date)}</div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-gray-600">{talk.series || 'N/A'}</div>
+                          <div className="text-sm text-[#FAFAFA]/70">{talk.series || 'N/A'}</div>
                         </td>
                         <td className="px-6 py-4">
                           <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              talk.type === 'video'
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-blue-100 text-blue-800'
-                            }`}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${talk.type === 'video'
+                                ? 'bg-purple-900/30 text-purple-300 border border-purple-500/30'
+                                : 'bg-blue-900/30 text-blue-300 border border-blue-500/30'
+                              }`}
                           >
                             {talk.type}
                           </span>
@@ -292,14 +294,14 @@ export default function ManageTalksPage() {
                         <td className="px-6 py-4 text-right space-x-2">
                           <button
                             onClick={() => handleEdit(talk)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-md bg-[#FB923C] text-[#1C1917] hover:bg-[#FCD34D] font-medium"
                           >
                             <Edit className="h-4 w-4" />
                             Edit
                           </button>
                           <button
                             onClick={() => setDeleteConfirm(talk.id)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-md bg-red-600 text-white hover:bg-red-700"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-md bg-red-600/20 text-red-400 border border-red-600/50 hover:bg-red-600/30"
                           >
                             <Trash2 className="h-4 w-4" />
                             Delete
@@ -317,13 +319,13 @@ export default function ManageTalksPage() {
 
       {/* Edit Modal */}
       {editingTalk && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">Edit Talk</h2>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#1C1917] border border-[#FB923C]/30 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-[#FB923C]/30">
+              <h2 className="text-xl font-bold text-[#FAFAFA]">Edit Talk</h2>
               <button
                 onClick={() => setEditingTalk(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-[#FAFAFA]/50 hover:text-[#FAFAFA]"
               >
                 <X className="h-6 w-6" />
               </button>
@@ -331,66 +333,70 @@ export default function ManageTalksPage() {
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className={labelClass}>
                   Title <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={editForm.title}
                   onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900"
+                  className={inputClass}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Speaker</label>
+                <label className={labelClass}>Speaker</label>
                 <input
                   type="text"
                   value={editForm.speaker}
                   onChange={(e) => setEditForm({ ...editForm, speaker: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <label className={labelClass}>Date</label>
                 <input
                   type="date"
                   value={editForm.date}
                   onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900"
+                  className={inputClass}
+                  style={{ colorScheme: 'dark' }}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Series</label>
+                <label className={labelClass}>Series</label>
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-wrap items-center gap-3">
-                    <label className="inline-flex items-center gap-2 text-sm text-gray-900">
+                    <label className="inline-flex items-center gap-2 text-sm text-[#FAFAFA]">
                       <input
                         type="radio"
                         name="series"
                         checked={seriesMode === 'none'}
                         onChange={() => setSeriesMode('none')}
+                        className="text-[#FB923C] focus:ring-[#FB923C]"
                       />
                       None
                     </label>
-                    <label className="inline-flex items-center gap-2 text-sm text-gray-900">
+                    <label className="inline-flex items-center gap-2 text-sm text-[#FAFAFA]">
                       <input
                         type="radio"
                         name="series"
                         checked={seriesMode === 'new'}
                         onChange={() => setSeriesMode('new')}
+                        className="text-[#FB923C] focus:ring-[#FB923C]"
                       />
                       New
                     </label>
-                    <label className="inline-flex items-center gap-2 text-sm text-gray-900">
+                    <label className="inline-flex items-center gap-2 text-sm text-[#FAFAFA]">
                       <input
                         type="radio"
                         name="series"
                         checked={seriesMode === 'existing'}
                         onChange={() => setSeriesMode('existing')}
+                        className="text-[#FB923C] focus:ring-[#FB923C]"
                       />
                       Existing
                     </label>
@@ -401,14 +407,15 @@ export default function ManageTalksPage() {
                       value={seriesNew}
                       onChange={(e) => setSeriesNew(e.target.value)}
                       placeholder="e.g. Romans"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900"
+                      className={inputClass}
                     />
                   )}
                   {seriesMode === 'existing' && (
                     <select
                       value={seriesExisting}
                       onChange={(e) => setSeriesExisting(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900"
+                      className={inputClass}
+                      style={{ backgroundColor: '#1C1917' }}
                     >
                       <option value="">Select series…</option>
                       {seriesList.map((s) => (
@@ -422,21 +429,21 @@ export default function ManageTalksPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Summary</label>
+                <label className={labelClass}>Summary</label>
                 <textarea
                   value={editForm.summary}
                   onChange={(e) => setEditForm({ ...editForm, summary: e.target.value })}
                   rows={8}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 whitespace-pre-wrap"
+                  className={`${inputClass} whitespace-pre-wrap`}
                   placeholder="Add points with - bullets and line breaks"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-[#FB923C]/30">
               <button
                 onClick={() => setEditingTalk(null)}
-                className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 text-sm rounded-md border border-[#FB923C]/30 text-[#FAFAFA] hover:bg-white/5"
                 disabled={editLoading}
               >
                 Cancel
@@ -444,7 +451,7 @@ export default function ManageTalksPage() {
               <button
                 onClick={handleSaveEdit}
                 disabled={editLoading || !editForm.title.trim()}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-md bg-[#FB923C] text-[#1C1917] hover:bg-[#FCD34D] disabled:opacity-50 font-semibold"
               >
                 {editLoading ? (
                   <>
@@ -465,18 +472,18 @@ export default function ManageTalksPage() {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#1C1917] border border-[#FB923C]/30 rounded-lg shadow-xl max-w-md w-full">
             <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Confirm Delete</h2>
-              <p className="text-gray-600 mb-6">
+              <h2 className="text-xl font-bold text-[#FAFAFA] mb-4">Confirm Delete</h2>
+              <p className="text-[#FAFAFA]/70 mb-6">
                 Are you sure you want to delete this talk? This will permanently delete the media
                 files, thumbnail, and all associated data. This action cannot be undone.
               </p>
               <div className="flex items-center justify-end gap-3">
                 <button
                   onClick={() => setDeleteConfirm(null)}
-                  className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="px-4 py-2 text-sm rounded-md border border-[#FB923C]/30 text-[#FAFAFA] hover:bg-white/5"
                   disabled={deleteLoading}
                 >
                   Cancel

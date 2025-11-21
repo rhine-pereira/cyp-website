@@ -4,6 +4,16 @@ import { GetObjectCommand, ListObjectsV2Command, HeadObjectCommand } from "@aws-
 import { s3, TALKS_S3_BUCKET } from "@/app/lib/s3";
 import { redirect } from 'next/navigation';
 import { getAllTalks } from "@/app/lib/talksStore";
+import { ArrowLeft } from "lucide-react";
+
+// Warm Espresso Theme Colors
+const theme = {
+  background: '#1C1917',
+  surface: '#1C1917',
+  primary: '#FB923C',
+  text: '#FAFAFA',
+  border: '#FB923C30',
+};
 
 function decodeKeyParam(param: string | string[]): string {
   const joined = Array.isArray(param) ? param.join("/") : param;
@@ -98,7 +108,7 @@ async function getTalkTitle(key: string): Promise<string> {
   } catch {
     // Fall back to deriving title from filename
   }
-  
+
   // Fallback: derive title from filename using the same logic as the API
   const filename = key.split("/").pop() || key;
   return filename.replace(/\.[^.]+$/, '').replace(/[\-_]+/g, ' ').trim();
@@ -117,11 +127,11 @@ async function findNewKeyForOldKey(oldKey: string): Promise<string | null> {
   try {
     // Directly use the talks store instead of API call
     const items = await getAllTalks();
-    
+
     // Extract filename from old key
     const oldFilename = oldKey.split('/').pop();
     if (!oldFilename) return null;
-    
+
     // Try to find a talk with the same filename
     for (const item of items) {
       const itemKey = item.key || item.id;
@@ -130,26 +140,26 @@ async function findNewKeyForOldKey(oldKey: string): Promise<string | null> {
         return itemKey;
       }
     }
-    
+
     // Alternative: try to match by title from the old directory structure
     // Old format: talks/<year>/<date>-<series>-<title>/<file>
     // Extract title from old path and match
     const pathParts = oldKey.split('/');
     if (pathParts.length >= 3) {
       const oldDirName = pathParts[2]; // e.g., "2025-11-12-romans-faith"
-      
+
       for (const item of items) {
         const itemKey = item.key || item.id;
         const itemDirName = itemKey.split('/').slice(-2, -1)[0]; // Get directory name
         const itemFilename = itemKey.split('/').pop();
-        
+
         // Check if filename matches and directory contains similar parts
         if (itemFilename === oldFilename) {
           return itemKey;
         }
       }
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error finding new key:', error);
@@ -160,10 +170,10 @@ async function findNewKeyForOldKey(oldKey: string): Promise<string | null> {
 export default async function Page({ params }: { params: Promise<{ key: string[] }> }) {
   const p = await params;
   const key = decodeKeyParam(p?.key || []);
-  
+
   // Check if the key exists in S3
   const exists = await checkKeyExists(key);
-  
+
   // If key doesn't exist, try to find the new location and redirect
   if (!exists) {
     const newKey = await findNewKeyForOldKey(key);
@@ -174,31 +184,44 @@ export default async function Page({ params }: { params: Promise<{ key: string[]
     }
     // If we can't find the new key, continue anyway - the player will show an error
   }
-  
+
   const title = await getTalkTitle(key);
 
   let summaryHtml: string | null = null;
   try {
     const summary = await getSummary(key);
     if (summary) summaryHtml = renderMarkdown(summary);
-  } catch {}
+  } catch { }
 
   return (
-    <main className="mx-auto max-w-5xl p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <a href="/talks" className="text-sm text-blue-700 hover:underline">← Back to Talks</a>
-            <div className="ml-4">
-              <TalkShareButton title={title} />
-            </div>
+    <div className="min-h-screen p-4" style={{ backgroundColor: theme.background, color: theme.text }}>
+      <main className="mx-auto max-w-5xl">
+        <div className="mb-6 flex items-center justify-between">
+          <a
+            href="/talks"
+            className="inline-flex items-center text-sm font-medium hover:opacity-80 transition-opacity"
+            style={{ color: theme.primary }}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Talks
+          </a>
+          <div className="ml-4">
+            <TalkShareButton title={title} />
           </div>
-      <h1 className="text-2xl font-semibold tracking-tight text-slate-900 break-words">{title}</h1>
-  {/* Video object key removed from public view for privacy/security */}
-      <div className="rounded-lg overflow-hidden bg-slate-900">
-        <TalkPlayer className="w-full aspect-video" objectKey={key} autoPlay={false} />
-      </div>
-      {summaryHtml ? (
-        <div className="mt-6 prose prose-sm max-w-none text-slate-900" dangerouslySetInnerHTML={{ __html: summaryHtml }} />
-      ) : null}
-    </main>
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-6 break-words" style={{ color: theme.text }}>{title}</h1>
+        {/* Video object key removed from public view for privacy/security */}
+        <div className="rounded-xl overflow-hidden shadow-2xl border" style={{ borderColor: theme.border, backgroundColor: '#000' }}>
+          <TalkPlayer className="w-full aspect-video" objectKey={key} autoPlay={false} />
+        </div>
+        {summaryHtml ? (
+          <div
+            className="mt-8 prose prose-invert max-w-none"
+            style={{ color: theme.text }}
+            dangerouslySetInnerHTML={{ __html: summaryHtml }}
+          />
+        ) : null}
+      </main>
+    </div>
   );
 }

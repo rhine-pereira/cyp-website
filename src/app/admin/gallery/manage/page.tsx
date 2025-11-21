@@ -90,60 +90,63 @@ export default function ManageGalleryPage() {
     }
   };
 
+  const inputClass = "px-3 py-2 rounded-md border border-[#FB923C]/30 text-sm text-[#FAFAFA] placeholder:text-[#FAFAFA]/30 bg-white/5 focus:border-[#FB923C] focus:ring-[#FB923C]";
+  const buttonClass = "px-3 py-2 rounded-md border border-[#FB923C]/30 text-sm text-[#FAFAFA] bg-white/5 hover:bg-[#FB923C]/10";
+
   return (
     <AuthGuard>
-      <div className="min-h-[calc(100vh-4rem)] bg-gray-50">
+      <div className="min-h-[calc(100vh-4rem)] bg-[#1C1917]">
         <div className="max-w-6xl mx-auto p-6">
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm text-gray-900">
-            <div className="p-4 border-b border-gray-200 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <h1 className="text-xl font-semibold text-gray-900">Manage Gallery</h1>
+          <div className="bg-[#1C1917] border border-[#FB923C]/30 rounded-xl shadow-sm text-[#FAFAFA]">
+            <div className="p-4 border-b border-[#FB923C]/30 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <h1 className="text-xl font-semibold text-[#FAFAFA]">Manage Gallery</h1>
               <div className="flex flex-wrap gap-2 items-center">
-                <input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search title/caption/category" className="px-3 py-2 rounded-md border border-gray-300 text-sm text-gray-900 placeholder:text-gray-500 bg-white" />
-                <select value={category} onChange={(e)=>setCategory(e.target.value)} className="px-3 py-2 rounded-md border border-gray-300 text-sm text-gray-900 bg-white">
+                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search title/caption/category" className={inputClass} />
+                <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} style={{ backgroundColor: '#1C1917' }}>
                   <option value="all">All</option>
                   {categories.map((c) => (<option key={c.slug} value={c.slug}>{c.label}</option>))}
                 </select>
-                <button onClick={selectAllFiltered} className="px-3 py-2 rounded-md border border-gray-300 text-sm text-gray-900 bg-white hover:bg-gray-50">Select all</button>
-                <button onClick={clearSelection} className="px-3 py-2 rounded-md border border-gray-300 text-sm text-gray-900 bg-white hover:bg-gray-50">Clear</button>
-                <button onClick={deleteSelected} disabled={!selected.size} className="px-3 py-2 rounded-md bg-red-600 text-white text-sm disabled:opacity-50">Delete selected</button>
+                <button onClick={selectAllFiltered} className={buttonClass}>Select all</button>
+                <button onClick={clearSelection} className={buttonClass}>Clear</button>
+                <button onClick={deleteSelected} disabled={!selected.size} className="px-3 py-2 rounded-md bg-red-600 text-white text-sm disabled:opacity-50 hover:bg-red-700">Delete selected</button>
               </div>
             </div>
 
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-[#FB923C]/10">
               {filtered.map((it) => (
-                <div key={it.id} className="grid grid-cols-[32px_64px_1fr_120px_80px] items-center gap-3 px-4 py-2">
+                <div key={it.id} className="grid grid-cols-[32px_64px_1fr_120px_80px] items-center gap-3 px-4 py-2 hover:bg-white/5">
                   <div>
-                    <input type="checkbox" checked={selected.has(it.id)} onChange={()=>toggleSelect(it.id)} />
+                    <input type="checkbox" checked={selected.has(it.id)} onChange={() => toggleSelect(it.id)} className="text-[#FB923C] focus:ring-[#FB923C] bg-white/5 border-[#FB923C]/30 rounded" />
                   </div>
-                  <div className="w-16 h-12 bg-gray-100 overflow-hidden rounded">
+                  <div className="w-16 h-12 bg-white/5 overflow-hidden rounded border border-[#FB923C]/30">
                     {it.type === 'image' ? (
                       <img src={it.thumbnailUrl || it.url} alt={it.title || ''} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-600">Video</div>
+                      <div className="w-full h-full flex items-center justify-center text-[10px] text-[#FAFAFA]/70">Video</div>
                     )}
                   </div>
                   <div className="truncate">
-                    <div className="text-sm font-medium text-gray-900 truncate">{it.title || it.caption || it.id}</div>
-                    <div className="text-xs text-gray-500 truncate">{it.categoryLabel || it.category || ''}</div>
+                    <div className="text-sm font-medium text-[#FAFAFA] truncate">{it.title || it.caption || it.id}</div>
+                    <div className="text-xs text-[#FAFAFA]/50 truncate">{it.categoryLabel || it.category || ''}</div>
                   </div>
-                  <div className="text-xs text-gray-500 truncate">{new Date(it.createdAt).toLocaleString()}</div>
+                  <div className="text-xs text-[#FAFAFA]/50 truncate">{new Date(it.createdAt).toLocaleString()}</div>
                   <div className="text-right">
-                    <button onClick={()=>deleteOne(it.id)} className="px-2 py-1 rounded border border-gray-300 text-sm text-gray-900 bg-white hover:bg-gray-50">Delete</button>
+                    <button onClick={() => deleteOne(it.id)} className="px-2 py-1 rounded border border-[#FB923C]/30 text-sm text-[#FAFAFA] bg-white/5 hover:bg-[#FB923C]/10">Delete</button>
                   </div>
                 </div>
               ))}
               {!filtered.length && (
-                <div className="p-6 text-sm text-gray-700">No items match.</div>
+                <div className="p-6 text-sm text-[#FAFAFA]/70">No items match.</div>
               )}
             </div>
 
-            <div className="p-4 border-t border-gray-200">
+            <div className="p-4 border-t border-[#FB923C]/30">
               {cursor ? (
-                <button disabled={loading} onClick={()=>load(false)} className="px-4 py-2 rounded-md bg-gray-900 text-white disabled:opacity-50">
+                <button disabled={loading} onClick={() => load(false)} className="px-4 py-2 rounded-md bg-[#FB923C] text-[#1C1917] disabled:opacity-50 hover:bg-[#FCD34D] font-semibold">
                   {loading ? 'Loading…' : 'Load more'}
                 </button>
               ) : (
-                <span className="text-sm text-gray-500">End of list</span>
+                <span className="text-sm text-[#FAFAFA]/50">End of list</span>
               )}
             </div>
           </div>

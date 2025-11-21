@@ -74,70 +74,72 @@ export default function AdminsManagementPage() {
 
   return (
     <AuthGuard>
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-semibold uppercase tracking-[-0.02em] text-gray-900">Manage Administrators</h1>
-          <p className="text-gray-600">Add or remove admin accounts that can access the admin pages.</p>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-          <div className="flex space-x-2">
-            <input
-              type="email"
-              placeholder="admin@example.com"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              onClick={handleAdd}
-              disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              Add
-            </button>
+      <div className="min-h-screen bg-[#1C1917]">
+        <div className="max-w-4xl mx-auto p-6">
+          <div className="mb-6">
+            <h1 className="text-3xl font-semibold uppercase tracking-[-0.02em] text-[#FAFAFA]">Manage Administrators</h1>
+            <p className="text-[#FAFAFA]/70">Add or remove admin accounts that can access the admin pages.</p>
           </div>
-        </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-900">Current Admins</h2>
-
-          {loading ? (
-            <div className="py-8 flex justify-center">
-              <Spinner label="Loading admins" />
+          <div className="bg-[#1C1917] border border-[#FB923C]/30 rounded-lg p-6 mb-6">
+            <div className="flex space-x-2">
+              <input
+                type="email"
+                placeholder="admin@example.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                className="flex-1 border border-[#FB923C]/30 rounded-md px-3 py-2 text-[#FAFAFA] placeholder-[#FAFAFA]/30 bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#FB923C]"
+              />
+              <button
+                onClick={handleAdd}
+                disabled={saving}
+                className="px-4 py-2 bg-[#FB923C] text-[#1C1917] rounded-md hover:bg-[#FCD34D] disabled:opacity-50 font-semibold"
+              >
+                Add
+              </button>
             </div>
-          ) : (
-            <ul className="space-y-2">
-              {/* Show owner explicitly */}
-              <li key="owner" className="flex items-center justify-between p-3 border rounded">
-                <div>
-                  <div className="font-medium text-gray-900">{OWNER_EMAIL}</div>
-                  {/* <div className="text-xs text-gray-600">Owner</div> */}
-                </div>
-              </li>
+          </div>
 
-              {admins.length === 0 && (
-                <li className="py-6 text-center text-gray-600">No other admins added.</li>
-              )}
+          <div className="bg-[#1C1917] border border-[#FB923C]/30 rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4 text-[#FAFAFA]">Current Admins</h2>
 
-              {admins.map((admin) => (
-                <li key={admin.id} className="flex items-center justify-between p-3 border rounded">
+            {loading ? (
+              <div className="py-8 flex justify-center">
+                <Spinner label="Loading admins" trackClassName="opacity-25 bg-[#FB923C]/30" ringClassName="text-[#FB923C]" labelClassName="text-[#FAFAFA]/70" />
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {/* Show owner explicitly */}
+                <li key="owner" className="flex items-center justify-between p-3 border border-[#FB923C]/30 rounded bg-white/5">
                   <div>
-                    <div className="font-medium text-gray-900">{admin.email}</div>
-                    {/* <div className="text-xs text-gray-600">Admin</div> */}
-                  </div>
-                  <div>
-                    <button
-                      onClick={() => handleRemove(admin.id, admin.email)}
-                      className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-                    >
-                      Remove
-                    </button>
+                    <div className="font-medium text-[#FAFAFA]">{OWNER_EMAIL}</div>
+                    <div className="text-xs text-[#FAFAFA]/50">Owner</div>
                   </div>
                 </li>
-              ))}
-            </ul>
-          )}
+
+                {admins.length === 0 && (
+                  <li className="py-6 text-center text-[#FAFAFA]/50">No other admins added.</li>
+                )}
+
+                {admins.map((admin) => (
+                  <li key={admin.id} className="flex items-center justify-between p-3 border border-[#FB923C]/30 rounded bg-white/5">
+                    <div>
+                      <div className="font-medium text-[#FAFAFA]">{admin.email}</div>
+                      <div className="text-xs text-[#FAFAFA]/50">Admin</div>
+                    </div>
+                    <div>
+                      <button
+                        onClick={() => handleRemove(admin.id, admin.email)}
+                        className="px-3 py-1 bg-red-600/20 text-red-400 border border-red-600/50 rounded hover:bg-red-600/30"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </AuthGuard>

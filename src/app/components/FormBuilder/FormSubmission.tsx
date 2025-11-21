@@ -9,16 +9,32 @@ import * as safeStorage from '@/app/lib/safeStorage';
 
 interface FormSubmissionProps {
   form: FormLayout;
+  theme?: 'light' | 'espresso';
 }
 
 type FormData = Record<string, unknown>;
 
-export default function FormSubmission({ form }: FormSubmissionProps) {
+// Warm Espresso Theme Colors
+const espressoTheme = {
+  background: '#1C1917',
+  surface: '#1C1917',
+  primary: '#FB923C',
+  text: '#FAFAFA',
+  border: '#FB923C30',
+  inputBg: 'rgba(255, 255, 255, 0.05)',
+  inputBorder: 'rgba(251, 146, 60, 0.3)',
+  inputFocusRing: 'rgba(251, 146, 60, 0.5)',
+};
+
+export default function FormSubmission({ form, theme = 'light' }: FormSubmissionProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  
+
   const { register, handleSubmit, formState: { errors, isValid }, reset, getValues, setValue } = useForm<FormData>({ mode: 'onChange' });
   const formKey = `form_draft_${form.id}`;
+
+  const isEspresso = theme === 'espresso';
+  const currentTheme = isEspresso ? espressoTheme : null;
 
   const toSafeId = (id: string) => id.replace(/[\.\,\[\]\s]+/g, '_');
   const safeIdMap: Record<string, string> = Object.fromEntries(form.fields.map(f => [f.id, toSafeId(f.id)]));
@@ -28,12 +44,18 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
     const splitRegex = /(https?:\/\/[^\s]+)/g; // for splitting only
     const parts = text.split(splitRegex);
     return (
-      <div className="whitespace-pre-line text-slate-700">
+      <div className={`whitespace-pre-line ${isEspresso ? 'text-[#FAFAFA]/80' : 'text-slate-700'}`}>
         {parts.map((part, idx) => {
           const isUrl = /^https?:\/\/\S+$/i.test(part);
           if (isUrl) {
             return (
-              <a key={idx} href={part} target="_blank" rel="noopener noreferrer" className="break-words text-sky-700 underline hover:text-sky-800">
+              <a
+                key={idx}
+                href={part}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`break-words underline ${isEspresso ? 'text-[#FB923C] hover:text-[#FCD34D]' : 'text-sky-700 hover:text-sky-800'}`}
+              >
                 {part}
               </a>
             );
@@ -47,11 +69,11 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     setSubmitStatus('idle');
-    
+
     try {
       // Process form data to handle file uploads
       const processedData: Record<string, unknown> = {};
-      
+
       for (const [key, value] of Object.entries(data)) {
         const originalKey = origIdBySafe[key] ?? key;
         if (value instanceof FileList && value.length > 0) {
@@ -118,7 +140,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
         setSubmitStatus('success');
         reset();
         // clear draft
-        try { safeStorage.removeItem(formKey); } catch {}
+        try { safeStorage.removeItem(formKey); } catch { }
       } else {
         throw new Error(result.error || 'Failed to submit form');
       }
@@ -143,7 +165,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
           setValue(targetKey, v);
         });
       }
-    } catch {}
+    } catch { }
 
     const saveDraft = () => {
       try {
@@ -155,7 +177,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
           normalized[originalKey] = v;
         });
         safeStorage.setItem(formKey, JSON.stringify(normalized));
-      } catch {}
+      } catch { }
     };
 
     const interval = setInterval(saveDraft, 5000);
@@ -175,7 +197,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
           e.preventDefault();
           e.returnValue = '';
         }
-      } catch {}
+      } catch { }
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
@@ -191,12 +213,22 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
   }, [errors]);
 
   const renderField = (field: FormField) => {
-    const baseClasses = "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 placeholder-slate-500";
-    const errorClasses = "border-red-500 focus:ring-red-500";
-    
+    const baseClasses = isEspresso
+      ? "w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 transition-colors"
+      : "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 placeholder-slate-500";
+
+    const espressoClasses = isEspresso
+      ? "bg-white/5 border border-[#FB923C]/30 text-[#FAFAFA] placeholder-white/30 focus:ring-[#FB923C]/50 focus:border-[#FB923C]"
+      : "";
+
+    const errorClasses = isEspresso
+      ? "border-red-500 focus:ring-red-500"
+      : "border-red-500 focus:ring-red-500";
+
     const safeId = toSafeId(field.id);
-    const fieldClasses = (errors as Record<string, any>)[safeId] ? `${baseClasses} ${errorClasses}` : baseClasses;
-    
+    const hasError = Boolean((errors as Record<string, any>)[safeId]);
+    const fieldClasses = `${baseClasses} ${isEspresso ? espressoClasses : ''} ${hasError ? errorClasses : ''}`;
+
     switch (field.type) {
       case 'textarea':
         return (
@@ -215,61 +247,63 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
             placeholder={field.placeholder}
             className={`${fieldClasses} resize-vertical`}
             rows={3}
+            style={isEspresso ? { backgroundColor: 'rgba(255,255,255,0.05)', color: '#FAFAFA' } : {}}
           />
         );
-      
+
       case 'select':
         return (
           <select
             {...register(safeId, {
               required: field.required ? `${field.label} is required` : false,
             })}
-            className={`${fieldClasses} bg-white`}
+            className={`${fieldClasses} ${!isEspresso ? 'bg-white' : ''}`}
+            style={isEspresso ? { backgroundColor: '#1C1917', color: '#FAFAFA' } : {}}
           >
             {field.options?.map((option: string, index: number) => (
               <option key={index} value={option}>{option}</option>
             ))}
           </select>
         );
-      
+
       case 'radio':
         return (
           <div className="space-y-2">
             {field.options?.map((option: string, index: number) => (
-              <label key={index} className="flex items-center">
+              <label key={index} className="flex items-center cursor-pointer">
                 <input
                   {...register(safeId, {
                     required: field.required ? `${field.label} is required` : false,
                   })}
                   type="radio"
                   value={option}
-                  className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300"
+                  className={`h-4 w-4 focus:ring-2 ${isEspresso ? 'text-[#FB923C] focus:ring-[#FB923C] border-[#FB923C]/30 bg-transparent' : 'text-sky-600 focus:ring-sky-500 border-gray-300'}`}
                 />
-                <span className="ml-2 text-sm text-gray-700">{option}</span>
+                <span className={`ml-2 text-sm ${isEspresso ? 'text-[#FAFAFA]/90' : 'text-gray-700'}`}>{option}</span>
               </label>
             ))}
           </div>
         );
-      
+
       case 'checkbox':
         return (
           <div className="space-y-2">
             {field.options?.map((option: string, index: number) => (
-              <label key={index} className="flex items-center">
+              <label key={index} className="flex items-center cursor-pointer">
                 <input
                   {...register(`${safeId}.${index}`, {
                     required: field.required ? `${field.label} is required` : false,
                   })}
                   type="checkbox"
                   value={option}
-                  className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded"
+                  className={`h-4 w-4 rounded focus:ring-2 ${isEspresso ? 'text-[#FB923C] focus:ring-[#FB923C] border-[#FB923C]/30 bg-transparent' : 'text-sky-600 focus:ring-sky-500 border-gray-300'}`}
                 />
-                <span className="ml-2 text-sm text-gray-700">{option}</span>
+                <span className={`ml-2 text-sm ${isEspresso ? 'text-[#FAFAFA]/90' : 'text-gray-700'}`}>{option}</span>
               </label>
             ))}
           </div>
         );
-      
+
       case 'file':
         return (
           <input
@@ -277,10 +311,12 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
               required: field.required ? `${field.label} is required` : false,
             })}
             type="file"
-            className={`${fieldClasses} file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100`}
+            className={`${fieldClasses} ${isEspresso
+              ? 'file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#FB923C] file:text-[#1C1917] hover:file:opacity-90'
+              : 'file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100'}`}
           />
         );
-      
+
       case 'image':
         return (
           <div className="space-y-2">
@@ -290,12 +326,14 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
               })}
               type="file"
               accept="image/*"
-              className={`${fieldClasses} file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100`}
+              className={`${fieldClasses} ${isEspresso
+                ? 'file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#FB923C] file:text-[#1C1917] hover:file:opacity-90'
+                : 'file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100'}`}
             />
-            <p className="text-xs text-gray-500">Upload an image file (JPG, PNG, GIF)</p>
+            <p className={`text-xs ${isEspresso ? 'text-[#FAFAFA]/50' : 'text-gray-500'}`}>Upload an image file (JPG, PNG, GIF)</p>
           </div>
         );
-      
+
       case 'admin-image':
         return (
           <div className="space-y-2">
@@ -307,20 +345,20 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
                     alt={field.label}
                     width={800}
                     height={600}
-                    className="h-auto w-full rounded-lg border"
+                    className={`h-auto w-full rounded-lg border ${isEspresso ? 'border-[#FB923C]/30' : ''}`}
                   />
                 </div>
-                <p className="text-sm text-gray-600 mt-2">{field.label}</p>
+                <p className={`text-sm mt-2 ${isEspresso ? 'text-[#FAFAFA]/70' : 'text-gray-600'}`}>{field.label}</p>
               </div>
             ) : (
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <p className="text-gray-500">No image available</p>
-                <p className="text-xs text-gray-400 mt-1">Field ID: {field.id}</p>
+              <div className={`border-2 border-dashed rounded-lg p-8 text-center ${isEspresso ? 'border-[#FB923C]/20' : 'border-gray-300'}`}>
+                <p className={isEspresso ? 'text-[#FAFAFA]/50' : 'text-gray-500'}>No image available</p>
+                <p className={`text-xs mt-1 ${isEspresso ? 'text-[#FAFAFA]/30' : 'text-gray-400'}`}>Field ID: {field.id}</p>
               </div>
             )}
           </div>
         );
-      
+
       default:
         return (
           <input
@@ -344,6 +382,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
             type={field.type}
             placeholder={field.placeholder}
             className={fieldClasses}
+            style={isEspresso ? { backgroundColor: 'rgba(255,255,255,0.05)', color: '#FAFAFA' } : {}}
           />
         );
     }
@@ -352,10 +391,10 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
   if (submitStatus === 'success') {
     return (
       <div className="mx-auto max-w-2xl p-6">
-        <div className="rounded-lg border border-green-200 bg-green-50 p-6 text-center">
-          <div className="text-green-600 text-6xl mb-4">✓</div>
-          <h2 className="text-2xl font-bold text-green-800 mb-2">Form Submitted Successfully!</h2>
-          <p className="text-green-700">Thank you for your submission.</p>
+        <div className={`rounded-lg border p-6 text-center ${isEspresso ? 'border-green-500/30 bg-green-900/20' : 'border-green-200 bg-green-50'}`}>
+          <div className={`text-6xl mb-4 ${isEspresso ? 'text-green-400' : 'text-green-600'}`}>✓</div>
+          <h2 className={`text-2xl font-bold mb-2 ${isEspresso ? 'text-green-200' : 'text-green-800'}`}>Form Submitted Successfully!</h2>
+          <p className={isEspresso ? 'text-green-300' : 'text-green-700'}>Thank you for your submission.</p>
         </div>
       </div>
     );
@@ -363,7 +402,7 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
 
   return (
     <div className="mx-auto max-w-2xl p-6">
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className={`rounded-xl border shadow-sm p-6 ${isEspresso ? 'bg-[#1C1917] border-[#FB923C]/30' : 'bg-white border-gray-200'}`}>
         {/* Header image on top */}
         {form.imageUrl && (
           <div className="mb-4">
@@ -379,42 +418,49 @@ export default function FormSubmission({ form }: FormSubmissionProps) {
           </div>
         )}
         <div className="mb-6">
-          <h1 className="mb-2 text-3xl font-bold text-slate-900">{form.title}</h1>
+          <h1 className={`mb-2 text-3xl font-bold ${isEspresso ? 'text-[#FAFAFA]' : 'text-slate-900'}`}>{form.title}</h1>
           {form.description && linkify(form.description)}
         </div>
         {form.acceptingResponses === false ? (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800">
+          <div className={`rounded-lg border p-4 ${isEspresso ? 'border-amber-500/30 bg-amber-900/20 text-amber-200' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
             This form is no longer accepting responses.
           </div>
         ) : (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {form.fields.map((field) => (
-            <div key={field.id} className="space-y-2">
-              {field.type !== 'admin-image' && (
-                <label className="block text-sm font-medium text-gray-700">
-                  {field.label}
-                  {field.required && <span className="text-red-500 ml-1">*</span>}
-                </label>
-              )}
-              {renderField(field)}
-              {Boolean((errors as Record<string, any>)[toSafeId(field.id)]?.message) && (
-                <p className="text-sm text-red-600">{String((errors as Record<string, any>)[toSafeId(field.id)]?.message)}</p>
-              )}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {form.fields.map((field) => (
+              <div key={field.id} className="space-y-2">
+                {field.type !== 'admin-image' && (
+                  <label className={`block text-sm font-medium ${isEspresso ? 'text-[#FAFAFA]/90' : 'text-gray-700'}`}>
+                    {field.label}
+                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                  </label>
+                )}
+                {renderField(field)}
+                {Boolean((errors as Record<string, any>)[toSafeId(field.id)]?.message) && (
+                  <p className="text-sm text-red-600">{String((errors as Record<string, any>)[toSafeId(field.id)]?.message)}</p>
+                )}
+              </div>
+            ))}
+
+            {submitStatus === 'error' && (
+              <div className={`border rounded-lg p-4 ${isEspresso ? 'bg-red-900/20 border-red-500/30' : 'bg-red-50 border-red-200'}`}>
+                <p className={isEspresso ? 'text-red-300' : 'text-red-800'}>There was an error submitting the form. Please try again.</p>
+              </div>
+            )}
+
+            <div className="pt-4">
+              <Button
+                type="submit"
+                disabled={isSubmitting || !isValid}
+                className={`h-11 w-full disabled:cursor-not-allowed disabled:opacity-50 font-semibold ${isEspresso
+                    ? 'bg-[#FB923C] text-[#1C1917] hover:bg-[#FCD34D]'
+                    : 'bg-sky-600 text-white hover:bg-sky-700'
+                  }`}
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Form'}
+              </Button>
             </div>
-          ))}
-          
-          {submitStatus === 'error' && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800">There was an error submitting the form. Please try again.</p>
-            </div>
-          )}
-          
-          <div className="pt-4">
-            <Button type="submit" disabled={isSubmitting || !isValid} className="h-11 w-full bg-sky-600 text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50">
-              {isSubmitting ? 'Submitting...' : 'Submit Form'}
-            </Button>
-          </div>
-        </form>
+          </form>
         )}
       </div>
     </div>

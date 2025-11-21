@@ -7,25 +7,34 @@ import { Separator } from "@/app/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { MapPin, Clock } from "lucide-react";
 
-
 const mapsUrl = "https://maps.app.goo.gl/q2GgBCUyaGfCgj7RA";
 const mapsEmbed = "https://www.google.com/maps?q=Jeevan+Darshan+Kendra,+Giriz&output=embed";
 
+// Warm Espresso Theme Colors
+const theme = {
+  background: '#1C1917',
+  surface: '#1C1917',
+  primary: '#FB923C',
+  text: '#FAFAFA',
+  border: '#FB923C30',
+};
+
 export default function JoinPage() {
   return (
-    <main>
-      <section className="relative isolate overflow-hidden bg-gradient-to-b from-amber-50 via-white to-sky-50">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <main className="min-h-screen" style={{ backgroundColor: theme.background }}>
+      <section className="relative isolate overflow-hidden">
+        <div className="absolute inset-0 opacity-10 blur-3xl bg-[radial-gradient(circle_at_20%_20%,#FB923C,transparent_40%),radial-gradient(circle_at_80%_30%,#FCD34D,transparent_40%),radial-gradient(circle_at_50%_80%,#FB923C,transparent_40%)]" />
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 relative">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mb-6 flex items-center justify-between"
+            className="mb-8 flex items-center justify-between"
           >
-            <h1 className="text-3xl font-semibold uppercase tracking-[-0.02em] text-slate-900 sm:text-4xl">
+            <h1 className="text-3xl font-bold uppercase tracking-[-0.02em] sm:text-4xl" style={{ color: theme.text }}>
               Join CYP
             </h1>
-            <Separator className="ml-4 hidden flex-1 sm:block" />
+            <div className="ml-4 hidden flex-1 sm:block h-px opacity-20" style={{ backgroundColor: theme.text }} />
           </motion.div>
 
           <div className="grid gap-8 lg:grid-cols-2">
@@ -35,25 +44,29 @@ export default function JoinPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              <Card>
+              <Card className="border" style={{ backgroundColor: theme.surface, borderColor: theme.border }}>
                 <CardHeader>
-                  <CardTitle className="text-slate-900">Join us at Jeevan Darshan Kendra, Giriz</CardTitle>
+                  <CardTitle className="text-2xl" style={{ color: theme.text }}>Join us at Jeevan Darshan Kendra, Giriz</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <MapPin className="mt-0.5 h-5 w-5 text-sky-600" />
+                  <div className="space-y-6">
+                    <div className="flex items-start gap-4">
+                      <div className="p-2 rounded-lg bg-white/5 border border-white/10">
+                        <MapPin className="h-6 w-6" style={{ color: theme.primary }} />
+                      </div>
                       <div>
-                        <p className="font-medium text-slate-900">Jeevan Darshan Kendra, Giriz</p>
-                        <p className="text-slate-600">Vasai</p>
+                        <p className="font-semibold text-lg" style={{ color: theme.text }}>Jeevan Darshan Kendra, Giriz</p>
+                        <p className="opacity-70" style={{ color: theme.text }}>Vasai</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-amber-600" />
-                      <p className="text-slate-800">Every Monday, 7:00 PM – 9:00 PM</p>
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 rounded-lg bg-white/5 border border-white/10">
+                        <Clock className="h-6 w-6" style={{ color: theme.primary }} />
+                      </div>
+                      <p className="font-medium" style={{ color: theme.text }}>Every Monday, 7:00 PM – 9:00 PM</p>
                     </div>
-                    <div className="pt-2">
-                      <Button asChild size="lg" className="bg-sky-600 text-white hover:bg-sky-700">
+                    <div className="pt-4">
+                      <Button asChild size="lg" className="w-full sm:w-auto font-semibold" style={{ backgroundColor: theme.primary, color: '#1C1917' }}>
                         <Link href={mapsUrl} target="_blank" rel="noopener noreferrer" aria-label="Open location in Google Maps">
                           Open in Google Maps
                         </Link>
@@ -70,14 +83,15 @@ export default function JoinPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              <div className="relative overflow-hidden rounded-xl border border-sky-100 bg-white shadow-sm">
-                <div className="relative aspect-video w-full">
+              <div className="relative overflow-hidden rounded-xl border shadow-2xl" style={{ borderColor: theme.border }}>
+                <div className="relative aspect-video w-full bg-gray-900">
                   <iframe
-                    className="h-full w-full"
+                    className="h-full w-full opacity-90 hover:opacity-100 transition-opacity"
                     src={mapsEmbed}
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
                     aria-label="Map for Jeevan Darshan Kendra, Giriz"
+                    style={{ filter: 'invert(90%) hue-rotate(180deg) contrast(90%)' }}
                   />
                 </div>
               </div>

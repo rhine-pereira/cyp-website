@@ -10,9 +10,21 @@ import Image from 'next/image';
 
 interface FormBuilderProps {
   initialForm?: FormLayout;
+  theme?: 'light' | 'espresso';
 }
 
-export default function FormBuilder({ initialForm }: FormBuilderProps) {
+// Warm Espresso Theme Colors
+const espressoTheme = {
+  background: '#1C1917',
+  surface: '#1C1917',
+  primary: '#FB923C',
+  text: '#FAFAFA',
+  border: '#FB923C30',
+  inputBg: 'rgba(255, 255, 255, 0.05)',
+  inputBorder: 'rgba(251, 146, 60, 0.3)',
+};
+
+export default function FormBuilder({ initialForm, theme = 'light' }: FormBuilderProps) {
   const router = useRouter();
   const [form, setForm] = useState<FormLayout>(initialForm ?? {
     id: '',
@@ -24,13 +36,15 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
     formType: 'general',
   });
 
+  const isEspresso = theme === 'espresso';
+
   useEffect(() => {
     if (initialForm) {
       setForm(initialForm);
       setImagePreview(initialForm.imageUrl ?? null);
     }
   }, [initialForm]);
-  
+
   const [showPreview, setShowPreview] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -56,19 +70,19 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
       placeholder: '',
       required: false,
     };
-    
+
     setForm(prev => ({
       ...prev,
       fields: [...prev.fields, newField]
     }));
-    
+
     setSelectedFieldId(newField.id);
   };
 
   const updateField = (updatedField: FormField) => {
     setForm(prev => ({
       ...prev,
-      fields: prev.fields.map(field => 
+      fields: prev.fields.map(field =>
         field.id === updatedField.id ? updatedField : field
       )
     }));
@@ -79,7 +93,7 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
       ...prev,
       fields: prev.fields.filter(field => field.id !== fieldId)
     }));
-    
+
     if (selectedFieldId === fieldId) {
       setSelectedFieldId(null);
     }
@@ -89,13 +103,13 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
     setForm(prev => {
       const fields = [...prev.fields];
       const index = fields.findIndex(field => field.id === fieldId);
-      
+
       if (direction === 'up' && index > 0) {
         [fields[index], fields[index - 1]] = [fields[index - 1], fields[index]];
       } else if (direction === 'down' && index < fields.length - 1) {
         [fields[index], fields[index + 1]] = [fields[index + 1], fields[index]];
       }
-      
+
       return { ...prev, fields };
     });
   };
@@ -161,53 +175,61 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
 
   const selectedField = form.fields.find(field => field.id === selectedFieldId);
 
+  const containerClass = isEspresso ? 'bg-[#1C1917] border-[#FB923C]/30' : 'bg-white border-gray-200';
+  const textClass = isEspresso ? 'text-[#FAFAFA]' : 'text-gray-900';
+  const subTextClass = isEspresso ? 'text-[#FAFAFA]/70' : 'text-gray-600';
+  const inputClass = isEspresso
+    ? 'w-full border border-[#FB923C]/30 rounded-md px-3 py-2 bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#FB923C] text-[#FAFAFA] placeholder-white/30'
+    : 'w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500';
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Form Builder</h1>
-        <p className="text-gray-600">Create and customize your forms with drag-and-drop ease</p>
+        <h1 className={`text-3xl font-bold mb-2 ${textClass}`}>Form Builder</h1>
+        <p className={subTextClass}>Create and customize your forms with drag-and-drop ease</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Form Settings */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Form Settings</h3>
-            
+          <div className={`border rounded-lg p-4 shadow-sm ${containerClass}`}>
+            <h3 className={`text-lg font-semibold mb-4 ${textClass}`}>Form Settings</h3>
+
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className={`block text-sm font-medium mb-1 ${isEspresso ? 'text-[#FAFAFA]/90' : 'text-gray-700'}`}>
                   Form Title
                 </label>
                 <input
                   type="text"
                   value={form.title}
                   onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500"
+                  className={inputClass}
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className={`block text-sm font-medium mb-1 ${isEspresso ? 'text-[#FAFAFA]/90' : 'text-gray-700'}`}>
                   Description
                 </label>
                 <textarea
                   value={form.description || ''}
                   onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500"
+                  className={inputClass}
                   rows={4}
                   placeholder="Enter form description (use Enter for line breaks)"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className={`block text-sm font-medium mb-1 ${isEspresso ? 'text-[#FAFAFA]/90' : 'text-gray-700'}`}>
                   Form Type
                 </label>
                 <select
                   value={form.formType || 'general'}
                   onChange={(e) => setForm(prev => ({ ...prev, formType: e.target.value as FormLayout['formType'] }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className={inputClass}
+                  style={isEspresso ? { backgroundColor: '#1C1917' } : {}}
                 >
                   <option value="general">General</option>
                   <option value="registration">Registration</option>
@@ -218,10 +240,10 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className={`block text-sm font-medium mb-2 ${isEspresso ? 'text-[#FAFAFA]/90' : 'text-gray-700'}`}>
                   Form Header Image
                 </label>
-                <p className="text-xs text-gray-500 mb-2">Recommended aspect ratio: 4:1</p>
+                <p className={`text-xs mb-2 ${isEspresso ? 'text-[#FAFAFA]/50' : 'text-gray-500'}`}>Recommended aspect ratio: 4:1</p>
                 {imagePreview ? (
                   <div className="relative">
                     <div className="relative w-full pb-[25%] rounded-lg overflow-hidden">
@@ -241,10 +263,10 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
                     </button>
                   </div>
                 ) : (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                  <div className={`border-2 border-dashed rounded-lg p-4 text-center ${isEspresso ? 'border-[#FB923C]/30' : 'border-gray-300'}`}>
+                    <Upload className={`mx-auto h-8 w-8 mb-2 ${isEspresso ? 'text-[#FB923C]/50' : 'text-gray-400'}`} />
                     <label className="cursor-pointer">
-                      <span className="text-sm text-gray-600">Click to upload image</span>
+                      <span className={`text-sm ${isEspresso ? 'text-[#FAFAFA]/70' : 'text-gray-600'}`}>Click to upload image</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -259,9 +281,9 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
           </div>
 
           {/* Fields List */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+          <div className={`border rounded-lg p-4 shadow-sm ${containerClass}`}>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Form Fields</h3>
+              <h3 className={`text-lg font-semibold ${textClass}`}>Form Fields</h3>
               <div className="flex items-center space-x-2">
                 <select
                   onChange={(e) => {
@@ -270,7 +292,10 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
                       e.target.value = '';
                     }
                   }}
-                  className="text-sm border border-gray-300 rounded px-2 py-1 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`text-sm border rounded px-2 py-1 focus:outline-none focus:ring-2 ${isEspresso
+                      ? 'bg-[#1C1917] border-[#FB923C]/30 text-[#FAFAFA] focus:ring-[#FB923C]'
+                      : 'bg-white border-gray-300 text-gray-900 focus:ring-blue-500'
+                    }`}
                 >
                   <option value="">Add Field Type</option>
                   <option value="text">Text</option>
@@ -288,16 +313,15 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
                 </select>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               {form.fields.map((field, index) => (
                 <div
                   key={field.id}
-                  className={`p-3 border rounded-lg transition-colors ${
-                    selectedFieldId === field.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                  className={`p-3 border rounded-lg transition-colors ${selectedFieldId === field.id
+                      ? isEspresso ? 'border-[#FB923C] bg-[#FB923C]/10' : 'border-blue-500 bg-blue-50'
+                      : isEspresso ? 'border-[#FB923C]/20 hover:border-[#FB923C]/40' : 'border-gray-200 hover:border-gray-300'
+                    }`}
                   draggable
                   onDragStart={() => setDragIndex(index)}
                   onDragOver={(e) => {
@@ -315,12 +339,12 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
                   }}
                 >
                   <div className="flex justify-between items-center">
-                    <div 
+                    <div
                       onClick={() => setSelectedFieldId(field.id)}
                       className="flex-1 cursor-pointer"
                     >
-                      <p className="font-medium text-sm text-gray-900">{field.label}</p>
-                      <p className="text-xs text-gray-500 capitalize">{field.type}</p>
+                      <p className={`font-medium text-sm ${textClass}`}>{field.label}</p>
+                      <p className={`text-xs capitalize ${subTextClass}`}>{field.type}</p>
                     </div>
                     <div className="flex items-center space-x-2">
                       {field.required && (
@@ -330,14 +354,14 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
                         <button
                           onClick={() => moveField(field.id, 'up')}
                           disabled={index === 0}
-                          className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                          className={`disabled:opacity-30 ${isEspresso ? 'text-[#FB923C] hover:text-[#FCD34D]' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                           ↑
                         </button>
                         <button
                           onClick={() => moveField(field.id, 'down')}
                           disabled={index === form.fields.length - 1}
-                          className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                          className={`disabled:opacity-30 ${isEspresso ? 'text-[#FB923C] hover:text-[#FCD34D]' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                           ↓
                         </button>
@@ -346,9 +370,9 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
                   </div>
                 </div>
               ))}
-              
+
               {form.fields.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-4">
+                <p className={`text-sm text-center py-4 ${subTextClass}`}>
                   No fields added yet. Click &quot;Add Field&quot; to get started.
                 </p>
               )}
@@ -359,7 +383,10 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
           <button
             onClick={saveForm}
             disabled={isSaving || form.fields.length === 0}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            className={`w-full py-3 px-4 rounded-md focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold ${isEspresso
+                ? 'bg-[#FB923C] text-[#1C1917] hover:bg-[#FCD34D] focus:ring-[#FB923C]'
+                : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
+              }`}
           >
             <Save size={20} className="mr-2" />
             {isSaving ? 'Saving...' : 'Save Form'}
@@ -367,14 +394,14 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
 
           {/* Public Submission Link */}
           {form.id && (
-            <div className="mt-4 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">Public Submission Link</h4>
+            <div className={`mt-4 border rounded-lg p-4 shadow-sm ${containerClass}`}>
+              <h4 className={`text-sm font-semibold mb-2 ${textClass}`}>Public Submission Link</h4>
               <div className="flex items-stretch gap-2">
                 <input
                   type="text"
                   readOnly
                   value={`${origin || ''}/forms/${form.id}`}
-                  className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-900"
+                  className={`flex-1 border rounded-md px-3 py-2 ${isEspresso ? 'bg-white/5 border-[#FB923C]/30 text-[#FAFAFA]' : 'border-gray-300 text-gray-900'}`}
                   onFocus={(e) => e.currentTarget.select()}
                 />
                 <button
@@ -387,7 +414,10 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
                       /* no-op */
                     }
                   }}
-                  className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-md"
+                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-md ${isEspresso
+                      ? 'bg-[#FB923C]/20 hover:bg-[#FB923C]/30 text-[#FB923C]'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                    }`}
                 >
                   {copied ? <Check size={16} /> : <Clipboard size={16} />}
                   <span className="text-sm">{copied ? 'Copied' : 'Copy'}</span>
@@ -404,10 +434,11 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
               field={selectedField}
               onUpdate={updateField}
               onDelete={() => deleteField(selectedField.id)}
+              theme={theme}
             />
           ) : (
-            <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm text-center">
-              <p className="text-gray-500">Select a field to edit its properties</p>
+            <div className={`border rounded-lg p-8 shadow-sm text-center ${containerClass}`}>
+              <p className={subTextClass}>Select a field to edit its properties</p>
             </div>
           )}
         </div>
@@ -415,10 +446,10 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
         {/* Form Preview */}
         <div className="lg:col-span-1">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Preview</h3>
+            <h3 className={`text-lg font-semibold ${textClass}`}>Preview</h3>
             <button
               onClick={() => setShowPreview(!showPreview)}
-              className="flex items-center text-gray-600 hover:text-gray-800"
+              className={`flex items-center ${isEspresso ? 'text-[#FB923C] hover:text-[#FCD34D]' : 'text-gray-600 hover:text-gray-800'}`}
             >
               {showPreview ? <EyeOff size={20} /> : <Eye size={20} />}
               <span className="ml-1 text-sm">
@@ -426,12 +457,12 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
               </span>
             </button>
           </div>
-          
+
           {showPreview ? (
-            <FormPreview form={form} />
+            <FormPreview form={form} theme={theme} />
           ) : (
-            <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm text-center">
-              <p className="text-gray-500">Click &quot;Show Preview&quot; to see your form</p>
+            <div className={`border rounded-lg p-8 shadow-sm text-center ${containerClass}`}>
+              <p className={subTextClass}>Click &quot;Show Preview&quot; to see your form</p>
             </div>
           )}
         </div>
@@ -441,14 +472,14 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
       {dialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setDialogOpen(false)} />
-          <div className="relative z-10 w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
+          <div className={`relative z-10 w-full max-w-lg rounded-lg p-6 shadow-xl ${isEspresso ? 'bg-[#1C1917] border border-[#FB923C]/30' : 'bg-white'}`}>
             <div className="mb-4 flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className={`text-lg font-semibold ${textClass}`}>
                 {savedInfo.isEdit ? 'Form Updated' : 'Form Saved'}
               </h3>
               <button
                 onClick={() => setDialogOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className={`${subTextClass} hover:opacity-100`}
                 aria-label="Close"
               >
                 <X size={18} />
@@ -457,18 +488,18 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
             <div className="space-y-4">
               {savedInfo.formId && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Form ID</p>
-                  <p className="text-sm text-gray-900 break-all">{savedInfo.formId}</p>
+                  <p className={`text-sm font-medium ${subTextClass}`}>Form ID</p>
+                  <p className={`text-sm break-all ${textClass}`}>{savedInfo.formId}</p>
                 </div>
               )}
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-1">Submission URL</p>
+                <p className={`text-sm font-medium mb-1 ${subTextClass}`}>Submission URL</p>
                 <div className="flex items-stretch gap-2">
                   <input
                     type="text"
                     readOnly
                     value={`${origin || ''}/forms/${savedInfo.formId || form.id}`}
-                    className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-900"
+                    className={`flex-1 border rounded-md px-3 py-2 ${isEspresso ? 'bg-white/5 border-[#FB923C]/30 text-[#FAFAFA]' : 'border-gray-300 text-gray-900'}`}
                     onFocus={(e) => e.currentTarget.select()}
                   />
                   <button
@@ -479,7 +510,10 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
                         setTimeout(() => setDialogCopied(false), 1500);
                       } catch (_) { /* no-op */ }
                     }}
-                    className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-md"
+                    className={`inline-flex items-center gap-2 px-3 py-2 rounded-md ${isEspresso
+                        ? 'bg-[#FB923C]/20 hover:bg-[#FB923C]/30 text-[#FB923C]'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                      }`}
                   >
                     {dialogCopied ? <Check size={16} /> : <Clipboard size={16} />}
                     <span className="text-sm">{dialogCopied ? 'Copied' : 'Copy'}</span>
@@ -488,12 +522,12 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
               </div>
               {savedInfo.spreadsheetUrl && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Spreadsheet</p>
+                  <p className={`text-sm font-medium ${subTextClass}`}>Spreadsheet</p>
                   <a
                     href={savedInfo.spreadsheetUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:underline break-all"
+                    className={`text-sm hover:underline break-all ${isEspresso ? 'text-[#FB923C]' : 'text-blue-600'}`}
                   >
                     {savedInfo.spreadsheetUrl}
                   </a>
@@ -503,7 +537,10 @@ export default function FormBuilder({ initialForm }: FormBuilderProps) {
             <div className="mt-6 flex justify-end gap-2">
               <button
                 onClick={() => setDialogOpen(false)}
-                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                className={`inline-flex items-center rounded-md border px-4 py-2 text-sm ${isEspresso
+                    ? 'border-[#FB923C]/30 bg-transparent text-[#FAFAFA] hover:bg-white/5'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
               >
                 Close
               </button>
