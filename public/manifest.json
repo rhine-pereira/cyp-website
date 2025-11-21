@@ -1,0 +1,21 @@
+{
+  "name": "Christian Youth in Power Vasai",
+  "short_name": "CYP Vasai",
+  "description": "Empowering young Catholics through faith, community, and service",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1C1917",
+  "theme_color": "#FB923C",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/cyplogo_circle.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "social"],
+  "lang": "en-IN",
+  "dir": "ltr"
+}

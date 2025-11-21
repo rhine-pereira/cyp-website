@@ -65,10 +65,15 @@ export default function JoinPage() {
                       </div>
                       <p className="font-medium" style={{ color: theme.text }}>Every Monday, 7:00 PM – 9:00 PM</p>
                     </div>
-                    <div className="pt-4">
+                    <div className="pt-4 flex flex-col sm:flex-row gap-3">
                       <Button asChild size="lg" className="w-full sm:w-auto font-semibold" style={{ backgroundColor: theme.primary, color: '#1C1917' }}>
                         <Link href={mapsUrl} target="_blank" rel="noopener noreferrer" aria-label="Open location in Google Maps">
                           Open in Google Maps
+                        </Link>
+                      </Button>
+                      <Button asChild size="lg" className="w-full sm:w-auto font-semibold" style={{ backgroundColor: theme.primary, color: '#1C1917' }}>
+                        <Link href="https://www.cypvasai.org/forms/form_1763750855944_y4is91h1w" target="_blank" rel="noopener noreferrer" aria-label="Register for CYP">
+                          Register Now
                         </Link>
                       </Button>
                     </div>

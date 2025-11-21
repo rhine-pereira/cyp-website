@@ -29,16 +29,16 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-[#FB923C]/30 bg-[#1C1917]/80 backdrop-blur supports-[backdrop-filter]:bg-[#1C1917]/70 relative">
       <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2 sm:gap-3" aria-label="CYP Home">
+        <Link href="/" className="flex items-center gap-2 sm:gap-3 flex-1 md:flex-initial" aria-label="CYP Home">
           <Image
             src="/cyplogo_circle.png"
             alt="CYP logo"
             width={28}
             height={28}
-            className="rounded-md"
+            className="rounded-md flex-shrink-0"
             priority
           />
-          <span className="max-w-[50vw] truncate text-sm font-semibold uppercase tracking-[-0.02em] text-[#FB923C] sm:max-w-none sm:text-base">
+          <span className="text-base font-semibold uppercase tracking-[-0.02em] text-[#FB923C] sm:text-lg leading-7">
             Christian Youth in Power
           </span>
         </Link>
