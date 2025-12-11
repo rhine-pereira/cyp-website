@@ -309,7 +309,7 @@ export default function LotteryPage() {
         const orderData = {
           ...formData,
           // Create truly unique transaction ID: base-timestamp-ticketNum-random
-          transactionId: `${baseTransactionId}-${timestamp}-T${ticketNumber}-${Math.random().toString(36).substr(2, 6)}`,
+          transactionId: `${baseTransactionId}-${timestamp}-T${ticketNumber}-${Math.random().toString(36).substring(2, 8)}`,
           ticketNumber,
           amount: LOTTERY_PRICE,
           sessionId,

@@ -99,8 +99,7 @@ export async function POST(request: NextRequest) {
           session_id: null,
           locked_at: null,
         })
-        .eq('ticket_number', ticketNumber)
-        .eq('session_id', sessionId);
+        .eq('ticket_number', ticketNumber);
       
       throw orderError;
     }
