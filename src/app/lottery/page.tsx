@@ -43,7 +43,7 @@ export default function LotteryPage() {
 
   // Generate session ID on mount
   useEffect(() => {
-    const id = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const id = `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     setSessionId(id);
   }, []);
 
@@ -305,7 +305,7 @@ export default function LotteryPage() {
       const baseTransactionId = formData.transactionId;
       const timestamp = Date.now();
       
-      const promises = selectedTickets.map((ticketNumber, index) => {
+      const promises = selectedTickets.map((ticketNumber) => {
         const orderData = {
           ...formData,
           // Create truly unique transaction ID: base-timestamp-ticketNum-random
