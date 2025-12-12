@@ -158,25 +158,49 @@ export async function POST(request: NextRequest) {
 
     try {
       // Try primary, fallback to secondary if it fails
+      let emailSent = false;
       try {
-        await resend.emails.send({
+        const result = await resend.emails.send({
           from: 'CYP Lottery <lottery@fundraiser.cypvasai.org>',
           to: [order.email],
           subject: `🎟️ Your CYP Lottery E-Ticket - Ticket #${order.ticket_number}`,
           html: eTicketHtml,
         });
-      } catch (primaryError) {
-        console.log('[Email] Primary Resend failed, trying fallback:', primaryError);
-        if (resendFallback) {
-          await resendFallback.emails.send({
-            from: 'CYP Lottery <lottery@fundraisers.cypvasai.org>',
-            to: [order.email],
-            subject: `🎟️ Your CYP Lottery E-Ticket - Ticket #${order.ticket_number}`,
-            html: eTicketHtml,
-          });
-        } else {
-          throw primaryError;
+        
+        // Check if result indicates an error (Resend returns error in data)
+        if (result.error) {
+          throw new Error(result.error.message || 'Resend primary API error');
         }
+        emailSent = true;
+        console.log('[E-Ticket Email] Primary Resend success');
+      } catch (primaryError: any) {
+        console.error('[E-Ticket Email] Primary Resend failed:', primaryError?.message || primaryError);
+        
+        // Try fallback
+        if (resendFallback) {
+          try {
+            const fallbackResult = await resendFallback.emails.send({
+              from: 'CYP Lottery <lottery@fundraisers.cypvasai.org>',
+              to: [order.email],
+              subject: `🎟️ Your CYP Lottery E-Ticket - Ticket #${order.ticket_number}`,
+              html: eTicketHtml,
+            });
+            
+            if (fallbackResult.error) {
+              throw new Error(fallbackResult.error.message || 'Resend fallback API error');
+            }
+            emailSent = true;
+            console.log('[E-Ticket Email] Fallback Resend success');
+          } catch (fallbackError: any) {
+            console.error('[E-Ticket Email] Fallback Resend also failed:', fallbackError?.message || fallbackError);
+          }
+        } else {
+          console.error('[E-Ticket Email] No fallback API key configured');
+        }
+      }
+      
+      if (!emailSent) {
+        console.error('[E-Ticket Email] All email attempts failed for order:', orderId);
       }
     } catch (err) {
       console.error('Error sending e-ticket email (both attempts):', err);

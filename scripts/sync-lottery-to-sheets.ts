@@ -11,7 +11,7 @@ type ServiceAccount = {
 };
 
 const LOTTERY_SHEET_ID = '1ODlIMild9QS0wHSQny3BV1dQVqCrxEMqxGwdP9d8iFY';
-const SHEET_NAME = 'Lottery';
+const SHEET_NAME = 'Lottery Online';
 
 // Load environment variables from project root .env.local
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });

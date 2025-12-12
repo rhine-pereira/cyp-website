@@ -8,14 +8,13 @@ const LOTTERY_SHEET_ID = '1ODlIMild9QS0wHSQny3BV1dQVqCrxEMqxGwdP9d8iFY';
 
 // Email recipients
 const EMAIL_RECIPIENTS = [
-  "rhine.pereira@gmail.com",
-  "dabrecarren10@gmail.com",
+  "rhinepereira0@gmail.com",
   "crystal.colaco@gmail.com"
 ].filter(Boolean);
 
-// Initialize Resend with fallback support
-const resend = new Resend(process.env.RESEND_API_KEY);
-const resendFallback = process.env.RESEND_API_KEY2 ? new Resend(process.env.RESEND_API_KEY2) : null;
+// Initialize Resend with API 2 as primary and API 1 as fallback
+const resend = new Resend(process.env.RESEND_API_KEY2);
+const resendFallback = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export async function POST(request: NextRequest) {
   try {
@@ -68,8 +67,22 @@ export async function POST(request: NextRequest) {
     }
 
     if (ticket.status !== 'soft-locked' || ticket.session_id !== sessionId) {
+      console.error('[Order Error]', {
+        ticketNumber,
+        expectedSession: sessionId,
+        actualSession: ticket.session_id,
+        expectedStatus: 'soft-locked',
+        actualStatus: ticket.status,
+        hasOrderId: !!ticket.order_id,
+      });
       return NextResponse.json(
-        { error: 'Ticket is no longer reserved for you' },
+        { 
+          error: 'Ticket is no longer reserved for you',
+          details: {
+            ticketStatus: ticket.status,
+            sessionMatch: ticket.session_id === sessionId,
+          }
+        },
         { status: 400 }
       );
     }
@@ -186,25 +199,49 @@ export async function POST(request: NextRequest) {
       `;
 
         // Try primary, fallback to secondary if it fails
+        let emailSent = false;
         try {
-          await resend.emails.send({
+          const result = await resend.emails.send({
             from: 'CYP Lottery <lottery@fundraiser.cypvasai.org>',
             to: EMAIL_RECIPIENTS,
             subject: `New Lottery Order - Ticket #${ticketNumber} - ${name}`,
             html: adminEmailHtml,
           });
-        } catch (primaryError) {
-          console.log('[Email] Primary Resend failed, trying fallback:', primaryError);
-          if (resendFallback) {
-            await resendFallback.emails.send({
-              from: 'CYP Lottery <lottery@fundraisers.cypvasai.org>',
-              to: EMAIL_RECIPIENTS,
-              subject: `New Lottery Order - Ticket #${ticketNumber} - ${name}`,
-              html: adminEmailHtml,
-            });
-          } else {
-            throw primaryError;
+          
+          // Check if result indicates an error (Resend returns error in data)
+          if (result.error) {
+            throw new Error(result.error.message || 'Resend primary API error');
           }
+          emailSent = true;
+          console.log('[Email] Primary Resend success');
+        } catch (primaryError: any) {
+          console.error('[Email] Primary Resend failed:', primaryError?.message || primaryError);
+          
+          // Try fallback
+          if (resendFallback) {
+            try {
+              const fallbackResult = await resendFallback.emails.send({
+                from: 'CYP Lottery <lottery@fundraisers.cypvasai.org>',
+                to: EMAIL_RECIPIENTS,
+                subject: `New Lottery Order - Ticket #${ticketNumber} - ${name}`,
+                html: adminEmailHtml,
+              });
+              
+              if (fallbackResult.error) {
+                throw new Error(fallbackResult.error.message || 'Resend fallback API error');
+              }
+              emailSent = true;
+              console.log('[Email] Fallback Resend success');
+            } catch (fallbackError: any) {
+              console.error('[Email] Fallback Resend also failed:', fallbackError?.message || fallbackError);
+            }
+          } else {
+            console.error('[Email] No fallback API key configured');
+          }
+        }
+        
+        if (!emailSent) {
+          console.error('[Email] All email attempts failed for order:', orderId);
         }
 
         // Customer will only receive E-Ticket email after admin approval (no confirmation email)

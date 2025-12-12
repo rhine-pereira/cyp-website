@@ -17,6 +17,23 @@ const LOTTERY_PRICE = 100; // ₹100 per ticket
 const TIMER_DURATION = 5 * 60; // 5 minutes in seconds (matches soft-lock expiry)
 const SOFT_LOCK_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
+// ⚠️ TO ADD MORE TICKETS: Update these ranges and run scripts/add-more-tickets.ts
+const TICKET_RANGES = [
+  { start: 851, end: 900 },   // 50 tickets
+  { start: 951, end: 1000 },  // 50 tickets
+  // Add more ranges here when scaling:
+  // { start: 1001, end: 1050 }, // 50 tickets
+  // { start: 1051, end: 1100 }, // 50 tickets
+];
+
+// Generate all ticket numbers from ranges
+const ALL_TICKET_NUMBERS = TICKET_RANGES.flatMap(range => 
+  Array.from({ length: range.end - range.start + 1 }, (_, i) => range.start + i)
+);
+
+// Format ranges for display
+const TICKET_RANGES_TEXT = TICKET_RANGES.map(r => `${r.start}-${r.end}`).join(', ');
+
 export default function LotteryPage() {
   const router = useRouter();
   const [sessionId, setSessionId] = useState('');
@@ -40,6 +57,8 @@ export default function LotteryPage() {
   const [lockQueue, setLockQueue] = useState<number[]>([]);
   const [isProcessingQueue, setIsProcessingQueue] = useState(false);
   const [hasPaid, setHasPaid] = useState(false);
+  const [allLocksConfirmed, setAllLocksConfirmed] = useState(false);
+  const [isVerifyingLocks, setIsVerifyingLocks] = useState(false);
 
   // Generate session ID on mount
   useEffect(() => {
@@ -270,6 +289,62 @@ export default function LotteryPage() {
     alert('UPI ID copied to clipboard!');
   };
 
+  const verifyAndRetryLocks = async () => {
+    if (selectedTickets.length === 0 || !sessionId) return true;
+    
+    setIsVerifyingLocks(true);
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
+      try {
+        const res = await fetch(`/api/lottery/tickets?sessionId=${sessionId}`);
+        const data = await res.json();
+        
+        if (!res.ok) {
+          console.error('Failed to verify locks:', data);
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
+        }
+        
+        const myTicketsSet = new Set(data.myTickets || []);
+        const notLocked = selectedTickets.filter(t => !myTicketsSet.has(t));
+        
+        if (notLocked.length === 0) {
+          setAllLocksConfirmed(true);
+          setIsVerifyingLocks(false);
+          return true;
+        }
+        
+        // Retry locking the tickets that aren't locked
+        console.log(`Retrying locks for tickets: ${notLocked.join(', ')}`);
+        for (const ticketNumber of notLocked) {
+          try {
+            await fetch('/api/lottery/soft-lock', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ticketNumber, sessionId }),
+            });
+          } catch (err) {
+            console.error(`Failed to retry lock for ${ticketNumber}:`, err);
+          }
+        }
+        
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      } catch (err) {
+        console.error('Error verifying locks:', err);
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+    setIsVerifyingLocks(false);
+    setAllLocksConfirmed(false);
+    return false;
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -298,10 +373,18 @@ export default function LotteryPage() {
       // Auto-generate base transaction ID (not visible to user)
       const autoTransactionId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
+      // Final verification before submitting (locks already confirmed at checkout)
+      if (!sessionId || !allLocksConfirmed) {
+        alert('Session invalid or tickets not confirmed. Please try again.');
+        setShowCheckout(false);
+        setIsSubmitting(false);
+        return;
+      }
+
       // Submit orders SEQUENTIALLY (not in parallel) to prevent race conditions
       const failed = [];
       const succeeded = [];
-      
+
       for (const ticketNumber of selectedTickets) {
         const orderData = {
           ...formData,
@@ -557,7 +640,7 @@ export default function LotteryPage() {
         <div className="mb-6">
           <div className="text-center mb-4">
             <h1 className="text-3xl font-bold mb-2" style={{ color: theme.text }}>CYP Fundraiser Lottery</h1>
-            <p className="text-lg" style={{ color: theme.text, opacity: 0.8 }}>Select your lucky ticket numbers (851-900, 951-1000)</p>
+            <p className="text-lg" style={{ color: theme.text, opacity: 0.8 }}>Select your lucky ticket numbers ({TICKET_RANGES_TEXT})</p>
           </div>
           
           {/* Ticket Count Selector */}
@@ -685,7 +768,7 @@ export default function LotteryPage() {
         </div>
 
         <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 sm:gap-3">
-          {[...Array.from({ length: 50 }, (_, i) => 851 + i), ...Array.from({ length: 50 }, (_, i) => 951 + i)].map((num) => {
+          {ALL_TICKET_NUMBERS.map((num) => {
             const isSold = soldTickets.includes(num);
             const isSelectedByMe = selectedTickets.includes(num);
             const isSoftLockedByOthers = softLockedTickets.includes(num) && !isSelectedByMe;
@@ -761,14 +844,32 @@ export default function LotteryPage() {
                 </div>
               </div>
               <Button
-                onClick={() => setShowCheckout(true)}
+                onClick={async () => {
+                  const verified = await verifyAndRetryLocks();
+                  if (verified) {
+                    setShowCheckout(true);
+                  } else {
+                    alert('Unable to confirm all ticket reservations. Please try selecting the tickets again.');
+                    setSelectedTickets([]);
+                  }
+                }}
+                disabled={isVerifyingLocks || lockQueue.length > 0 || isProcessingQueue}
                 size="lg"
                 className="font-bold shadow-lg"
-                style={{ backgroundColor: theme.primary, color: theme.background }}
+                style={{ 
+                  backgroundColor: (isVerifyingLocks || lockQueue.length > 0 || isProcessingQueue) ? '#9ca3af' : theme.primary, 
+                  color: theme.background,
+                  opacity: (isVerifyingLocks || lockQueue.length > 0 || isProcessingQueue) ? 0.6 : 1
+                }}
               >
-                Proceed to Checkout →
+                {isVerifyingLocks ? 'Confirming Reservations...' : (lockQueue.length > 0 || isProcessingQueue) ? 'Reserving Tickets...' : 'Proceed to Checkout →'}
               </Button>
             </div>
+            {(lockQueue.length > 0 || isProcessingQueue || isVerifyingLocks) && (
+              <div className="mt-2 text-center text-sm font-semibold" style={{ color: theme.primary }}>
+                {isVerifyingLocks ? '🔄 Confirming reservations...' : `🔄 Processing ${lockQueue.length} ticket${lockQueue.length !== 1 ? 's' : ''}...`}
+              </div>
+            )}
             {timerActive && (
               <div className="mt-2 text-center text-sm" style={{ color: timeLeft < 120 ? '#ef4444' : theme.primary }}>
                 ⏱️ Time remaining: {formatTime(timeLeft)}

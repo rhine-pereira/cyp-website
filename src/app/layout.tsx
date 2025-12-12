@@ -3,6 +3,7 @@ import "./globals.css";
 import Header from "./components/Header";
 import { CartProvider } from "./providers/CartProvider";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.cypvasai.org'),
@@ -271,6 +272,7 @@ export default function RootLayout({
           <Header />
           {children}
         </CartProvider>
+        <Analytics />
       </body>
     </html>
   );
