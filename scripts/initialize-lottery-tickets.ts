@@ -25,8 +25,8 @@ async function initializeLotteryTickets() {
   const batch = db.batch();
 
   const ranges = [
-    [851, 900],
-    [951, 1000],
+    [1251, 1300],
+    [1501, 1550],
   ];
 
   for (const [start, end] of ranges) {
@@ -48,7 +48,7 @@ async function initializeLotteryTickets() {
   await batch.commit();
 
   console.log('\n✅ Successfully created lottery tickets!');
-  console.log('Ranges initialized: 851–900 and 951–1000');
+  console.log('Ranges initialized: 1251–1300 and 1501–1550');
 }
 
 

@@ -98,21 +98,18 @@ export default function FundraiserPage() {
         }
       `}</style>
 
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {loading ? (
-          <div className="col-span-full flex items-center justify-center py-20" style={{ color: theme.text }}>
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-solid border-current border-r-transparent mb-4" style={{ borderColor: theme.primary, borderRightColor: 'transparent' }}></div>
-              <p style={{ color: theme.text, opacity: 0.7 }}>Loading products...</p>
-            </div>
-          </div>
-        ) : inStockItems.length === 0 ? (
-          <div className="col-span-full text-center py-20" style={{ color: theme.text, opacity: 0.7 }}>No active listings at the moment.</div>
-        ) : (
-          inStockItems.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))
-        )}
+      <div className="rounded-xl border-2 p-8 text-center" style={{ backgroundColor: 'rgba(251, 146, 60, 0.08)', borderColor: theme.border }}>
+        <div className="text-6xl mb-4">🎄</div>
+        <h2 className="text-2xl font-bold mb-3" style={{ color: theme.primary }}>Store Closed for the Season</h2>
+        <p className="text-lg mb-2" style={{ color: theme.text, opacity: 0.9 }}>
+          Thank you for your amazing support this year!
+        </p>
+        <p className="text-base" style={{ color: theme.text, opacity: 0.7 }}>
+          Our fundraiser store will reopen next season. Stay tuned for updates!
+        </p>
+        <div className="mt-6 text-sm" style={{ color: theme.text, opacity: 0.6 }}>
+          ✨ Your contributions help us continue our mission of mercy, charity, and evangelization ✨
+        </div>
       </div>
 
       <div className="fixed bottom-4 left-0 right-0">

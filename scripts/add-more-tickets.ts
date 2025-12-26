@@ -1,9 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Load environment variables
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('❌ Missing Supabase environment variables!');
+  console.error('Make sure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in .env.local');
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function addTickets() {
   console.log('🎟️  Adding more lottery tickets...\n');
@@ -11,8 +22,8 @@ async function addTickets() {
   // ⚠️ CONFIGURE YOUR NEW TICKET RANGES HERE:
   const newRanges: Array<{ start: number; end: number }> = [
     // Example: Add 50 more tickets
-    // { start: 1001, end: 1050 },
-    // { start: 1051, end: 1100 },
+     { start: 1251, end: 1300 },
+     { start: 1501, end: 1550 },
     
     // Uncomment and modify as needed:
     // { start: 901, end: 950 },   // Add tickets 901-950

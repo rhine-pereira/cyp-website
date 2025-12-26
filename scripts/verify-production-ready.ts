@@ -74,14 +74,14 @@ async function verifyProductionReadiness() {
       .order('ticket_number');
     
     const numbers = tickets?.map(t => t.ticket_number) || [];
-    const range1 = numbers.filter(n => n >= 851 && n <= 900);
-    const range2 = numbers.filter(n => n >= 951 && n <= 1000);
+    const range1 = numbers.filter(n => n >= 1251 && n <= 1300);
+    const range2 = numbers.filter(n => n >= 1501 && n <= 1550);
     
     if (range1.length === 50 && range2.length === 50) {
-      console.log('   ✅ Ticket ranges correct (851-900: 50, 951-1000: 50)\n');
+      console.log('   ✅ Ticket ranges correct (1251-1300: 50, 1501-1550: 50)\n');
       passed++;
     } else {
-      console.log(`   ❌ Ticket ranges incorrect (851-900: ${range1.length}, 951-1000: ${range2.length})\n`);
+      console.log(`   ❌ Ticket ranges incorrect (1251-1300: ${range1.length}, 1501-1550: ${range2.length})\n`);
       failed++;
     }
   } catch (error) {
@@ -148,7 +148,7 @@ async function verifyProductionReadiness() {
     const { error: insert1 } = await supabase
       .from('lottery_orders')
       .insert({
-        ticket_number: 851,
+        ticket_number: 1251,
         name: 'Test User',
         phone: '1234567890',
         email: 'test@test.com',
@@ -165,7 +165,7 @@ async function verifyProductionReadiness() {
     const { error: insert2 } = await supabase
       .from('lottery_orders')
       .insert({
-        ticket_number: 852,
+        ticket_number: 1252,
         name: 'Test User 2',
         phone: '9876543210',
         email: 'test2@test.com',

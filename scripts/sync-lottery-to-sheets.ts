@@ -64,7 +64,10 @@ const auth = new google.auth.GoogleAuth({
   scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 });
 
-const sheets = google.sheets({ version: 'v4', auth });
+const sheets = google.sheets({
+  version: 'v4',
+  auth,
+});
 
 async function ensureHeadersExist() {
   try {

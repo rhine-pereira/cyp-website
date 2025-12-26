@@ -503,7 +503,7 @@ END:VCALENDAR`;
           ) : (
             <>
               {/* Mobile: Swipeable Carousel */}
-              <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-8 -mx-4 px-4 sm:hidden no-scrollbar touch-pan-x">
+              <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-8 -mx-4 px-4 sm:hidden no-scrollbar">
                 {events.length > 0 ? events.map((event) => (
                   <div key={event.id} className="min-w-[85vw] snap-center">
                     <Link href={`/events/${event.slug}`} className="block h-full group">
@@ -742,7 +742,7 @@ END:VCALENDAR`;
           </div>
 
           {/* Mobile Horizontal Scroll */}
-          <div className="flex overflow-x-auto snap-x snap-mandatory gap-2 pb-6 -mx-4 px-4 sm:hidden no-scrollbar touch-pan-x">
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-2 pb-6 -mx-4 px-4 sm:hidden no-scrollbar">
             {featuredGalleryImages.map((img, i) => (
               <div key={i} className="min-w-[70vw] aspect-[4/5] snap-center relative rounded-xl overflow-hidden shadow-md">
                 <Image src={img.src} alt={img.label} fill className="object-cover" />

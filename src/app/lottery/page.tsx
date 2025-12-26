@@ -19,15 +19,15 @@ const SOFT_LOCK_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 // ⚠️ TO ADD MORE TICKETS: Update these ranges and run scripts/add-more-tickets.ts
 const TICKET_RANGES = [
-  { start: 851, end: 900 },   // 50 tickets
-  { start: 951, end: 1000 },  // 50 tickets
+  { start: 1251, end: 1300 },
+  { start: 1501, end: 1550 },  // 50 tickets
   // Add more ranges here when scaling:
   // { start: 1001, end: 1050 }, // 50 tickets
   // { start: 1051, end: 1100 }, // 50 tickets
 ];
 
 // Generate all ticket numbers from ranges
-const ALL_TICKET_NUMBERS = TICKET_RANGES.flatMap(range => 
+const ALL_TICKET_NUMBERS = TICKET_RANGES.flatMap(range =>
   Array.from({ length: range.end - range.start + 1 }, (_, i) => range.start + i)
 );
 
@@ -106,7 +106,7 @@ export default function LotteryPage() {
           updated.delete(ticketNumber);
           return updated;
         });
-        
+
         // Remove from queue and process next
         setLockQueue(prev => prev.slice(1));
         setIsProcessingQueue(false);
@@ -119,7 +119,7 @@ export default function LotteryPage() {
   // Timer countdown
   useEffect(() => {
     if (!timerActive || timeLeft <= 0) return;
-    
+
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -142,10 +142,10 @@ export default function LotteryPage() {
         const releasePromises = selectedTickets.map(ticketNumber => {
           const payload = JSON.stringify({ ticketNumber, sessionId });
           // Try sendBeacon first (more reliable during unload)
-          const beaconSent = navigator.sendBeacon('/api/lottery/release-lock', 
+          const beaconSent = navigator.sendBeacon('/api/lottery/release-lock',
             new Blob([payload], { type: 'application/json' })
           );
-          
+
           // Fallback to fetch with keepalive if sendBeacon fails
           if (!beaconSent) {
             return fetch('/api/lottery/release-lock', {
@@ -153,7 +153,7 @@ export default function LotteryPage() {
               headers: { 'Content-Type': 'application/json' },
               body: payload,
               keepalive: true, // Ensures request completes even after page closes
-            }).catch(() => {}); // Ignore errors during cleanup
+            }).catch(() => { }); // Ignore errors during cleanup
           }
           return Promise.resolve();
         });
@@ -161,11 +161,11 @@ export default function LotteryPage() {
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-    
+
     // Also cleanup on component unmount (navigation within app)
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      
+
       // Release locks if navigating away
       if (selectedTickets.length > 0 && sessionId) {
         selectedTickets.forEach(ticketNumber => {
@@ -185,12 +185,12 @@ export default function LotteryPage() {
       const url = sessionId ? `/api/lottery/tickets?sessionId=${sessionId}&_t=${Date.now()}` : '/api/lottery/tickets';
       const response = await fetch(url);
       const data = await response.json();
-      
+
       if (response.ok) {
         setAvailableTickets(data.available || []);
         setSoftLockedTickets(data.softLocked || []); // Only tickets locked by OTHER users
         setSoldTickets(data.sold || []);
-        
+
         // Update selected tickets with tickets locked by current session
         if (data.myTickets && data.myTickets.length > 0) {
           setSelectedTickets(data.myTickets);
@@ -216,14 +216,14 @@ export default function LotteryPage() {
     if (selectedTickets.includes(ticketNumber)) {
       // Deselect: Remove from selected immediately (optimistic update)
       setSelectedTickets(prev => prev.filter(t => t !== ticketNumber));
-      
+
       // Release the lock in background
       fetch('/api/lottery/release-lock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ticketNumber, sessionId }),
       }).catch(error => console.error('Error releasing lock:', error));
-      
+
       return;
     }
 
@@ -274,7 +274,7 @@ export default function LotteryPage() {
         }
       }
     }
-    
+
     setSelectedTickets([]);
     setShowCheckout(false);
     setTimerActive(false);
@@ -292,15 +292,15 @@ export default function LotteryPage() {
 
   const verifyAndRetryLocks = async () => {
     if (selectedTickets.length === 0 || !sessionId) return true;
-    
+
     setIsVerifyingLocks(true);
     let attempts = 0;
     const maxAttempts = 3;
-    
+
     while (attempts < maxAttempts) {
       try {
         const res = await fetch(`/api/lottery/tickets?sessionId=${sessionId}&_t=${Date.now()}`);
-        
+
         if (!res.ok) {
           const errorText = await res.text();
           console.error(`Failed to verify locks (attempt ${attempts + 1}/${maxAttempts}):`, res.status, errorText);
@@ -310,9 +310,9 @@ export default function LotteryPage() {
           }
           continue;
         }
-        
+
         const data = await res.json();
-        
+
         console.log('API Response:', {
           myTickets: data.myTickets,
           myTicketsType: typeof data.myTickets,
@@ -320,26 +320,26 @@ export default function LotteryPage() {
           selectedTickets: selectedTickets,
           selectedTicketsType: typeof selectedTickets,
         });
-        
+
         const myTicketsSet = new Set(data.myTickets || []);
         const notLocked = selectedTickets.filter(t => !myTicketsSet.has(t));
-        
+
         console.log(`Verification attempt ${attempts + 1}: Expected ${selectedTickets.length}, Got ${myTicketsSet.size}, Missing ${notLocked.length}`, {
           selectedTickets,
           myTicketsArray: Array.from(myTicketsSet),
           notLockedTickets: notLocked,
         });
-        
+
         if (notLocked.length === 0) {
           setAllLocksConfirmed(true);
           setIsVerifyingLocks(false);
           console.log('✅ All locks confirmed');
           return true;
         }
-        
+
         // Retry locking the tickets that aren't locked
         console.log(`⚠️ Retrying locks for tickets: ${notLocked.join(', ')}`);
-        
+
         const lockPromises = notLocked.map(async ticketNumber => {
           try {
             const lockRes = await fetch('/api/lottery/soft-lock', {
@@ -347,13 +347,13 @@ export default function LotteryPage() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ ticketNumber, sessionId }),
             });
-            
+
             if (!lockRes.ok) {
               const error = await lockRes.json();
               console.error(`Failed to retry lock for ticket ${ticketNumber}:`, error);
               return { ticketNumber, success: false, error };
             }
-            
+
             console.log(`✅ Successfully relocked ticket ${ticketNumber}`);
             return { ticketNumber, success: true };
           } catch (err) {
@@ -361,9 +361,9 @@ export default function LotteryPage() {
             return { ticketNumber, success: false, error: err };
           }
         });
-        
+
         await Promise.all(lockPromises);
-        
+
         attempts++;
         if (attempts < maxAttempts) {
           await new Promise(resolve => setTimeout(resolve, 2000));
@@ -376,7 +376,7 @@ export default function LotteryPage() {
         }
       }
     }
-    
+
     setIsVerifyingLocks(false);
     setAllLocksConfirmed(false);
     console.error('❌ Failed to confirm all locks after 3 attempts');
@@ -391,12 +391,12 @@ export default function LotteryPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Prevent double submission
     if (isSubmitting) {
       return;
     }
-    
+
     // Check timer hasn't expired
     if (timeLeft <= 0) {
       alert('Time expired! Please start again.');
@@ -410,7 +410,7 @@ export default function LotteryPage() {
     try {
       // Auto-generate base transaction ID (not visible to user)
       const autoTransactionId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
+
       // Final verification before submitting (verify locks at submit time)
       if (!sessionId) {
         alert('Session invalid. Please refresh the page and try again.');
@@ -418,14 +418,14 @@ export default function LotteryPage() {
         setIsSubmitting(false);
         return;
       }
-      
+
       // Quick verification of locks before submitting
       const verifyRes = await fetch(`/api/lottery/tickets?sessionId=${sessionId}&_t=${Date.now()}`);
       if (verifyRes.ok) {
         const verifyData = await verifyRes.json();
         const myTicketsSet = new Set(verifyData.myTickets || []);
         const unlockedTickets = selectedTickets.filter(t => !myTicketsSet.has(t));
-        
+
         if (unlockedTickets.length > 0) {
           // Release all locks and reset state - let user reselect
           for (const ticketNumber of selectedTickets) {
@@ -439,7 +439,7 @@ export default function LotteryPage() {
               console.error('Error releasing lock:', error);
             }
           }
-          
+
           setSelectedTickets([]);
           setShowCheckout(false);
           setTimerActive(false);
@@ -509,13 +509,13 @@ export default function LotteryPage() {
       <div className="min-h-screen p-4" style={{ backgroundColor: theme.background }}>
         <div className="max-w-2xl mx-auto">
           <div className="mb-4 flex items-center justify-between">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 setShowCheckout(false);
                 setTimerActive(false);
-              }} 
+              }}
               style={{ color: theme.text }}
             >
               ← Back to Tickets
@@ -624,7 +624,7 @@ export default function LotteryPage() {
 
             <div className="p-4 rounded-lg border" style={{ backgroundColor: 'rgba(251, 146, 60, 0.05)', borderColor: theme.border }}>
               <h3 className="font-semibold mb-3" style={{ color: theme.text }}>UPI Payment</h3>
-              
+
               <div className="mb-4 p-3 rounded-lg flex justify-center" style={{ backgroundColor: 'white' }}>
                 <img src="/lottery_qr.png" alt="UPI QR Code" className="w-48 h-48" />
               </div>
@@ -646,13 +646,12 @@ export default function LotteryPage() {
             </div>
 
             {submitMessage && (
-              <div className={`p-3 rounded-lg text-sm font-medium ${
-                submitMessage.includes('successfully') 
-                  ? 'bg-green-500/20 border border-green-500/30' 
+              <div className={`p-3 rounded-lg text-sm font-medium ${submitMessage.includes('successfully')
+                  ? 'bg-green-500/20 border border-green-500/30'
                   : 'bg-red-500/20 border border-red-500/30'
-              }`} style={{ 
-                color: submitMessage.includes('successfully') ? '#22c55e' : '#ef4444'
-              }}>
+                }`} style={{
+                  color: submitMessage.includes('successfully') ? '#22c55e' : '#ef4444'
+                }}>
                 {submitMessage}
               </div>
             )}
@@ -668,7 +667,7 @@ export default function LotteryPage() {
               <p className="text-base mb-3" style={{ color: theme.text, opacity: 0.9 }}>
                 Please pay <strong style={{ color: theme.primary, fontSize: '1.25rem' }}>₹{totalAmount}</strong> to the UPI ID above, scan the QR code, or send to <strong>9175933634</strong>
               </p>
-              
+
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -688,8 +687,8 @@ export default function LotteryPage() {
               disabled={isSubmitting || !hasPaid}
               size="lg"
               className="w-full font-semibold"
-              style={{ 
-                backgroundColor: hasPaid ? theme.primary : '#9ca3af', 
+              style={{
+                backgroundColor: hasPaid ? theme.primary : '#9ca3af',
                 color: theme.background,
                 opacity: hasPaid ? 1 : 0.6,
                 cursor: hasPaid ? 'pointer' : 'not-allowed'
@@ -711,7 +710,7 @@ export default function LotteryPage() {
             <h1 className="text-3xl font-bold mb-2" style={{ color: theme.text }}>CYP Fundraiser Lottery</h1>
             <p className="text-lg" style={{ color: theme.text, opacity: 0.8 }}>Select your lucky ticket numbers ({TICKET_RANGES_TEXT})</p>
           </div>
-          
+
           {/* Ticket Count Selector */}
           <div className="flex items-center justify-center gap-3 mb-4">
             <label htmlFor="ticketCount" className="font-semibold" style={{ color: theme.text }}>
@@ -729,9 +728,9 @@ export default function LotteryPage() {
                 }
               }}
               className="px-4 py-2 rounded-lg font-semibold text-lg border-2"
-              style={{ 
-                backgroundColor: theme.surface, 
-                borderColor: theme.primary, 
+              style={{
+                backgroundColor: theme.surface,
+                borderColor: theme.primary,
                 color: theme.text,
                 outline: 'none'
               }}
@@ -743,7 +742,7 @@ export default function LotteryPage() {
               ))}
             </select>
           </div>
-          
+
           <p className="text-sm text-center" style={{ color: theme.primary }}>
             Selected: {selectedTickets.length} / {ticketCount} tickets
           </p>
@@ -841,7 +840,7 @@ export default function LotteryPage() {
             const isSold = soldTickets.includes(num);
             const isSelectedByMe = selectedTickets.includes(num);
             const isSoftLockedByOthers = softLockedTickets.includes(num) && !isSelectedByMe;
-            
+
             // Determine final state (priority: sold > soft-locked > selected > available)
             const isClickable = !isSold && !isSoftLockedByOthers;
             const isDisabled = isSold || isSoftLockedByOthers;
@@ -852,17 +851,16 @@ export default function LotteryPage() {
                 onClick={() => isClickable && handleTicketSelect(num)}
                 disabled={isDisabled}
                 title={
-                  isSold 
-                    ? 'This ticket is sold' 
-                    : isSoftLockedByOthers 
-                    ? 'Someone is currently selecting this ticket (5 min hold)' 
-                    : isSelectedByMe 
-                    ? 'You selected this ticket' 
-                    : 'Click to select this ticket'
+                  isSold
+                    ? 'This ticket is sold'
+                    : isSoftLockedByOthers
+                      ? 'Someone is currently selecting this ticket (5 min hold)'
+                      : isSelectedByMe
+                        ? 'You selected this ticket'
+                        : 'Click to select this ticket'
                 }
-                className={`aspect-square rounded-lg font-bold text-lg transition-all ${
-                  !isDisabled ? 'hover:scale-105 cursor-pointer' : 'cursor-not-allowed opacity-60'
-                }`}
+                className={`aspect-square rounded-lg font-bold text-lg transition-all ${!isDisabled ? 'hover:scale-105 cursor-pointer' : 'cursor-not-allowed opacity-60'
+                  }`}
                 style={{
                   backgroundColor: isSold ? '#6b7280' : isSoftLockedByOthers ? '#eab308' : isSelectedByMe ? '#22c55e' : theme.primary,
                   color: theme.background,
@@ -925,8 +923,8 @@ export default function LotteryPage() {
                 disabled={lockQueue.length > 0 || isProcessingQueue}
                 size="lg"
                 className="font-bold shadow-lg"
-                style={{ 
-                  backgroundColor: (lockQueue.length > 0 || isProcessingQueue) ? '#9ca3af' : theme.primary, 
+                style={{
+                  backgroundColor: (lockQueue.length > 0 || isProcessingQueue) ? '#9ca3af' : theme.primary,
                   color: theme.background,
                   opacity: (lockQueue.length > 0 || isProcessingQueue) ? 0.6 : 1
                 }}

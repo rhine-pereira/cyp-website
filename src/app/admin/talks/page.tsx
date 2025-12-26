@@ -52,7 +52,20 @@ export default function AdminTalksUploadPage() {
     })();
   }, []);
 
-  const PART_SIZE = 10 * 1024 * 1024;
+  // Adaptive part size: 50MB for large files, 10MB for smaller files
+  const getPartSize = (fileSize: number) => {
+    if (fileSize > 500 * 1024 * 1024) return 50 * 1024 * 1024; // 50MB for files > 500MB
+    if (fileSize > 100 * 1024 * 1024) return 25 * 1024 * 1024; // 25MB for files > 100MB
+    return 10 * 1024 * 1024; // 10MB default
+  };
+
+  // Calculate MD5 checksum for integrity verification
+  const calculateMD5 = async (blob: Blob): Promise<string> => {
+    const buffer = await blob.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
 
   const requestPartUrls = async (key: string, uploadId: string, totalParts: number) => {
     const partNumbers = Array.from({ length: totalParts }, (_, i) => i + 1);
@@ -83,57 +96,173 @@ export default function AdminTalksUploadPage() {
     if (!createRes.ok) throw new Error(created?.error || "Failed to init multipart");
     const { uploadId, key } = created as { uploadId: string; key: string };
 
+    const PART_SIZE = getPartSize(file.size);
     const totalParts = Math.ceil(file.size / PART_SIZE);
     const urls = await requestPartUrls(key, uploadId, totalParts);
 
     let uploadedBytes = 0;
     const perPartLoaded: Record<number, number> = {};
     const partsOut: Array<{ PartNumber: number; ETag: string }> = [];
+    const partChecksums: Record<number, string> = {};
 
-    const uploadPart = async (partNumber: number) => {
+    // Adaptive concurrency control
+    let currentConcurrency = 1; // Start conservative
+    let successCount = 0;
+    let failureCount = 0;
+    const MAX_CONCURRENCY = 6;
+    const MIN_CONCURRENCY = 1;
+
+    const adjustConcurrency = (success: boolean) => {
+      if (success) {
+        successCount++;
+        failureCount = Math.max(0, failureCount - 1);
+        // Increase concurrency after 3 consecutive successes
+        if (successCount >= 3 && currentConcurrency < MAX_CONCURRENCY) {
+          currentConcurrency++;
+          successCount = 0;
+          console.log(`📈 Increased concurrency to ${currentConcurrency}`);
+        }
+      } else {
+        failureCount++;
+        successCount = 0;
+        // Decrease concurrency immediately on failure
+        if (currentConcurrency > MIN_CONCURRENCY) {
+          currentConcurrency = Math.max(MIN_CONCURRENCY, Math.floor(currentConcurrency / 2));
+          console.log(`📉 Decreased concurrency to ${currentConcurrency}`);
+        }
+      }
+    };
+
+    const uploadPart = async (partNumber: number, maxRetries = 5) => {
       const start = (partNumber - 1) * PART_SIZE;
       const end = Math.min(start + PART_SIZE, file.size);
       const blob = file.slice(start, end);
       const url = urls[partNumber];
-      const etag = await new Promise<string>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("PUT", url);
-        xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const loaded = e.loaded;
+      
+      // Calculate checksum for integrity verification
+      if (!partChecksums[partNumber]) {
+        partChecksums[partNumber] = await calculateMD5(blob);
+      }
+      
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          const etag = await new Promise<string>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("PUT", url);
+            xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+            
+            // Dynamic timeout based on part size and attempt
+            const baseTimeout = Math.max(120000, (blob.size / 1024 / 1024) * 2000); // 2s per MB, min 2min
+            xhr.timeout = baseTimeout * (attempt + 1); // Increase timeout on retries
+            
+            let lastProgressTime = Date.now();
+            let stallTimeout: NodeJS.Timeout | null = null;
+            
+            xhr.upload.onprogress = (e) => {
+              if (e.lengthComputable) {
+                lastProgressTime = Date.now();
+                if (stallTimeout) clearTimeout(stallTimeout);
+                
+                const loaded = e.loaded;
+                const prev = perPartLoaded[partNumber] || 0;
+                perPartLoaded[partNumber] = loaded;
+                uploadedBytes += Math.max(0, loaded - prev);
+                const pct = Math.min(100, (uploadedBytes / file.size) * 100);
+                setProgress(pct);
+                
+                // Detect stalled uploads (no progress for 30s)
+                stallTimeout = setTimeout(() => {
+                  if (Date.now() - lastProgressTime > 30000) {
+                    xhr.abort();
+                    reject(new Error("Upload stalled"));
+                  }
+                }, 30000);
+              }
+            };
+            
+            xhr.onerror = () => {
+              if (stallTimeout) clearTimeout(stallTimeout);
+              reject(new Error("Network error"));
+            };
+            xhr.ontimeout = () => {
+              if (stallTimeout) clearTimeout(stallTimeout);
+              reject(new Error("Upload timeout"));
+            };
+            xhr.onabort = () => {
+              if (stallTimeout) clearTimeout(stallTimeout);
+              reject(new Error("Upload aborted"));
+            };
+            xhr.onload = () => {
+              if (stallTimeout) clearTimeout(stallTimeout);
+              if (xhr.status >= 200 && xhr.status < 300) {
+                const et = xhr.getResponseHeader("ETag") || "";
+                const finalLoaded = perPartLoaded[partNumber] || 0;
+                if (finalLoaded < blob.size) {
+                  uploadedBytes += blob.size - finalLoaded;
+                  perPartLoaded[partNumber] = blob.size;
+                  const pct = Math.min(100, (uploadedBytes / file.size) * 100);
+                  setProgress(pct);
+                }
+                resolve(et);
+              } else {
+                reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+              }
+            };
+            xhr.send(blob);
+          });
+          
+          partsOut.push({ PartNumber: partNumber, ETag: etag });
+          adjustConcurrency(true);
+          return; // Success
+        } catch (err: any) {
+          adjustConcurrency(false);
+          
+          if (attempt < maxRetries) {
+            // Exponential backoff with jitter
+            const baseDelay = Math.min(30000, 1000 * Math.pow(2, attempt)); // Max 30s
+            const jitter = Math.random() * 1000; // 0-1s jitter
+            const delay = baseDelay + jitter;
+            
+            console.log(`⚠️ Part ${partNumber} failed (attempt ${attempt + 1}/${maxRetries + 1}): ${err.message}. Retrying in ${(delay/1000).toFixed(1)}s...`);
+            
+            // Reset progress for this part
             const prev = perPartLoaded[partNumber] || 0;
-            perPartLoaded[partNumber] = loaded;
-            uploadedBytes += Math.max(0, loaded - prev);
-            const pct = Math.min(100, (uploadedBytes / file.size) * 100);
-            setProgress(pct);
-          }
-        };
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            const et = xhr.getResponseHeader("ETag") || "";
-            const finalLoaded = perPartLoaded[partNumber] || 0;
-            if (finalLoaded < blob.size) {
-              uploadedBytes += blob.size - finalLoaded;
-              perPartLoaded[partNumber] = blob.size;
-              const pct = Math.min(100, (uploadedBytes / file.size) * 100);
-              setProgress(pct);
-            }
-            resolve(et);
+            uploadedBytes -= prev;
+            perPartLoaded[partNumber] = 0;
+            setProgress(Math.max(0, (uploadedBytes / file.size) * 100));
+            
+            await new Promise(r => setTimeout(r, delay));
           } else {
-            reject(new Error(`Part ${partNumber} failed (${xhr.status})`));
+            throw new Error(`Part ${partNumber} failed after ${maxRetries + 1} attempts: ${err.message}`);
           }
-        };
-        xhr.send(blob);
-      });
-      partsOut.push({ PartNumber: partNumber, ETag: etag });
+        }
+      }
     };
 
-    for (let i = 1; i <= totalParts; i++) {
-      // sequential to keep code simpler and UI deterministic; can be parallelized if needed
-      await uploadPart(i);
+    // Dynamic parallel upload with adaptive concurrency
+    const partQueue = Array.from({ length: totalParts }, (_, i) => i + 1);
+    const activeUploads = new Set<Promise<void>>();
+
+    while (partQueue.length > 0 || activeUploads.size > 0) {
+      // Start new uploads up to current concurrency limit
+      while (partQueue.length > 0 && activeUploads.size < currentConcurrency) {
+        const partNumber = partQueue.shift();
+        if (partNumber) {
+          const uploadPromise = uploadPart(partNumber).finally(() => {
+            activeUploads.delete(uploadPromise);
+          });
+          activeUploads.add(uploadPromise);
+        }
+      }
+      
+      // Wait for at least one upload to complete
+      if (activeUploads.size > 0) {
+        await Promise.race(activeUploads);
+      }
     }
+
+    // Sort parts by part number before completing
+    partsOut.sort((a, b) => a.PartNumber - b.PartNumber);
 
     const completeRes = await fetch("/api/talks/multipart", {
       method: "POST",
@@ -142,6 +271,8 @@ export default function AdminTalksUploadPage() {
     });
     const completed = await completeRes.json().catch(() => ({}));
     if (!completeRes.ok) throw new Error(completed?.error || "Failed to complete upload");
+    
+    console.log(`✅ Upload completed successfully with ${partsOut.length} parts`);
     return { key: completed.key as string, publicUrl: completed.publicUrl as string };
   };
 

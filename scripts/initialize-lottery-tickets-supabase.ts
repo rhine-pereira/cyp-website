@@ -20,8 +20,8 @@ async function initializeLotteryTickets() {
   console.log('🎟️  Initializing lottery tickets in Supabase...\n');
 
   const ranges = [
-    [851, 900],
-    [951, 1000],
+    [1251, 1300],
+    [1501, 1550],
   ];
 
   const tickets = [];
@@ -52,7 +52,7 @@ async function initializeLotteryTickets() {
   }
 
   console.log('\n✅ Successfully created lottery tickets!');
-  console.log('Ranges initialized: 851–900 and 951–1000');
+  console.log('Ranges initialized: 1251–1300 and 1501–1550');
   console.log(`Total tickets: ${tickets.length}`);
   console.log('\n🎉 Migration complete! You can now start your dev server.');
 }
