@@ -705,13 +705,28 @@ export default function LotteryPage() {
   return (
     <div className="min-h-screen p-4 pb-32" style={{ backgroundColor: theme.background }}>
       <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
+        <div className="rounded-xl border-2 p-8 text-center" style={{ backgroundColor: 'rgba(251, 146, 60, 0.08)', borderColor: theme.border }}>
+          <div className="text-6xl mb-4">🎟️</div>
+          <h1 className="text-3xl font-bold mb-3" style={{ color: theme.primary }}>Lottery Has Ended</h1>
+          <p className="text-xl mb-4" style={{ color: theme.text, opacity: 0.9 }}>
+            Thank you for your amazing support!
+          </p>
+          <p className="text-base mb-6" style={{ color: theme.text, opacity: 0.7 }}>
+            The lottery draw was held on 29th December 2025 at Jeevan Darshan Kendra, Giriz.
+          </p>
+          <div className="mt-6 text-sm" style={{ color: theme.text, opacity: 0.6 }}>
+            ✨ Your contributions help us continue our mission of mercy, charity, and evangelization ✨
+          </div>
+        </div>
+
+        {/* LOTTERY UI - HIDDEN (uncomment to reactivate) */}
+        {/* 
+        <div className="mb-6 mt-8">
           <div className="text-center mb-4">
-            <h1 className="text-3xl font-bold mb-2" style={{ color: theme.text }}>CYP Fundraiser Lottery</h1>
-            <p className="text-lg" style={{ color: theme.text, opacity: 0.8 }}>Select your lucky ticket numbers ({TICKET_RANGES_TEXT})</p>
+            <h2 className="text-2xl font-bold mb-2" style={{ color: theme.text }}>Prize Winners</h2>
+            <p className="text-lg" style={{ color: theme.text, opacity: 0.8 }}>Congratulations to all our winners!</p>
           </div>
 
-          {/* Ticket Count Selector */}
           <div className="flex items-center justify-center gap-3 mb-4">
             <label htmlFor="ticketCount" className="font-semibold" style={{ color: theme.text }}>
               How many tickets?
@@ -722,7 +737,6 @@ export default function LotteryPage() {
               onChange={(e) => {
                 const newCount = parseInt(e.target.value);
                 setTicketCount(newCount);
-                // Clear selections if exceeding new limit
                 if (selectedTickets.length > newCount) {
                   setSelectedTickets(prev => prev.slice(0, newCount));
                 }
@@ -748,7 +762,6 @@ export default function LotteryPage() {
           </p>
         </div>
 
-        {/* Prizes Section */}
         <div className="mb-6 p-4 md:p-6 rounded-lg" style={{ backgroundColor: 'rgba(251, 146, 60, 0.1)', border: '2px solid', borderColor: theme.primary }}>
           <h2 className="text-xl md:text-2xl font-bold text-center mb-3 md:mb-4" style={{ color: theme.primary }}>🎁 Amazing Prizes to Win! 🎁</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
@@ -841,7 +854,6 @@ export default function LotteryPage() {
             const isSelectedByMe = selectedTickets.includes(num);
             const isSoftLockedByOthers = softLockedTickets.includes(num) && !isSelectedByMe;
 
-            // Determine final state (priority: sold > soft-locked > selected > available)
             const isClickable = !isSold && !isSoftLockedByOthers;
             const isDisabled = isSold || isSoftLockedByOthers;
 
@@ -881,9 +893,11 @@ export default function LotteryPage() {
             The funds raised from the lottery will be used for: CYP Works of Mercy & Charity, Evangelizing youth, Conducting retreats & youth camps
           </p>
         </div>
+        */}
       </div>
 
-      {/* Floating Checkout Button */}
+      {/* Floating Checkout Button - HIDDEN */}
+      {/* 
       {selectedTickets.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 p-4 shadow-2xl" style={{ backgroundColor: theme.surface, borderTop: '2px solid', borderColor: theme.primary }}>
           <div className="max-w-6xl mx-auto">
@@ -912,8 +926,6 @@ export default function LotteryPage() {
               </div>
               <Button
                 onClick={() => {
-                  // Skip verification - just proceed if tickets are selected
-                  // The locks are already in place from the selection process
                   if (selectedTickets.length > 0 && sessionId) {
                     setShowCheckout(true);
                   } else {
@@ -945,6 +957,7 @@ export default function LotteryPage() {
           </div>
         </div>
       )}
+      */}
     </div>
   );
 }

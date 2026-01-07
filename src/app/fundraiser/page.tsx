@@ -58,32 +58,21 @@ export default function FundraiserPage() {
       </div>
 
       <Link href="/lottery" className="block mb-6">
-        <div className="relative overflow-hidden rounded-xl border-2 p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer animate-pulse-slow" style={{ backgroundColor: 'rgba(251, 146, 60, 0.15)', borderColor: theme.primary }}>
-          <div className="absolute top-2 left-2 text-2xl animate-bounce">🎈</div>
-          <div className="absolute top-2 right-2 text-2xl animate-bounce" style={{ animationDelay: '0.2s' }}>🎈</div>
-          <div className="absolute bottom-2 left-4 text-2xl animate-bounce" style={{ animationDelay: '0.4s' }}>🎈</div>
-          <div className="absolute bottom-2 right-4 text-2xl animate-bounce" style={{ animationDelay: '0.6s' }}>🎈</div>
-          
+        <div className="relative overflow-hidden rounded-xl border-2 p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer" style={{ backgroundColor: 'rgba(251, 146, 60, 0.08)', borderColor: theme.border }}>
           <div className="text-center relative z-10">
             <div className="text-4xl mb-2">🎟️</div>
             <h3 className="text-2xl font-bold mb-2" style={{ color: theme.primary }}>
-              🎉 MEGA LOTTERY DRAW! 🎉
+              Lottery Has Ended
             </h3>
             <p className="text-lg font-semibold mb-3" style={{ color: theme.text }}>
-              Win Amazing Prizes! Only 50 Tickets Available
+              Thank you for your amazing support!
             </p>
-            <div className="flex items-center justify-center gap-4 mb-3 text-sm flex-wrap" style={{ color: theme.text }}>
-              <span className="font-semibold">🥇 Smartphone</span>
-              <span className="font-semibold">🥈 Home Theatre</span>
-              <span className="font-semibold">🥉 Air Fryer</span>
-              <span className="font-semibold">🎁 & More!</span>
-            </div>
-            <div className="inline-block px-6 py-3 rounded-full font-bold text-lg animate-pulse" style={{ backgroundColor: theme.primary, color: theme.background }}>
-              ₹100 Only • Draw on 29th Dec
-            </div>
-            <p className="text-sm mt-3 font-medium" style={{ color: theme.text, opacity: 0.9 }}>
-              📍 Jeevan Darshan Kendra, Giriz
+            <p className="text-sm" style={{ color: theme.text, opacity: 0.7 }}>
+              The draw was held on 29th December 2025 at Jeevan Darshan Kendra, Giriz
             </p>
+            <div className="inline-block px-6 py-2 rounded-full font-bold text-sm mt-3" style={{ backgroundColor: 'rgba(251, 146, 60, 0.2)', color: theme.text }}>
+              Click to see details
+            </div>
           </div>
         </div>
       </Link>
