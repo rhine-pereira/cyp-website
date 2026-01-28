@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { GalleryItem } from '@/app/types/gallery';
 import Spinner from '@/app/components/Spinner';
+import VideoThumbnail from '@/app/components/Gallery/VideoThumbnail';
 
 export type GallerySectionProps = {
   category: string;
@@ -104,7 +105,9 @@ export default function GallerySection({
                 {it.thumbnailUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={it.thumbnailUrl} alt={it.caption || it.title || 'video'} className="w-full h-full object-cover opacity-90" loading="lazy" />
-                ) : <div className="flex items-center justify-center w-full h-full text-white/70 text-xs">Video</div>}
+                ) : (
+                  <VideoThumbnail src={it.url} alt={it.caption || it.title || 'video'} className="w-full h-full object-cover opacity-90" />
+                )}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow">
                     <div className="ml-1 w-0 h-0 border-t-8 border-b-8 border-l-0 border-r-0 border-transparent" style={{ borderLeft: '14px solid black' }} />
@@ -282,7 +285,14 @@ function Lightbox({ open, items, index, onClose, onPrev, onNext }: { open: boole
               <iframe className="w-full h-full rounded-lg" src={item.url.replace('watch?v=', 'embed/')} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
             </div>
           ) : (
-            <video controls className="max-w-full max-h-full rounded-lg" src={item.url} />
+            <video
+              controls
+              className="max-w-full max-h-full rounded-lg"
+              src={item.url}
+              playsInline
+              preload="metadata"
+              crossOrigin="anonymous"
+            />
           )
         )}
       </div>
