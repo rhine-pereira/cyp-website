@@ -1,50 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase';
 import {
-    getAvailableTickets,
-    getAllTierAvailability,
     initializeTierInventory,
     adjustTierInventory,
+    getAvailableTickets,
+    getAllTierAvailability,
 } from '@/app/lib/concert-redis';
 
-// Valid tiers
+// Valid tiers (lowercase for consistency)
 const VALID_TIERS = ['silver', 'gold', 'diamond'];
 
-// Default tier config (fallback if Supabase table doesn't exist)
-const DEFAULT_TIER_PRICES: Record<string, { name: string; price: number }> = {
-    silver: { name: 'Silver', price: 200 },
-    gold: { name: 'Gold', price: 500 },
-    diamond: { name: 'Diamond', price: 1000 },
-};
+// Capitalize tier name for display
+function capitalizeTier(tier: string): string {
+    return tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase();
+}
 
 // GET - Fetch inventory, sales data, and tier configuration
 export async function GET(request: NextRequest) {
     try {
         const supabase = createServerSupabaseClient();
 
-        // Get Redis inventory for all tiers
+        // Get Redis inventory for real-time availability (admin view)
         const redisInventory = await getAllTierAvailability();
 
         // Get tier configuration from Supabase
-        const { data: tierConfig, error: tierConfigError } = await supabase
+        const { data: tierData, error: tierError } = await supabase
             .from('concert_ticket_inventory')
-            .select('tier, price, description')
+            .select('tier, price, description, total_tickets, sold_tickets')
             .order('tier');
 
-        // Build tier prices from DB or defaults
+        if (tierError) {
+            console.error('[ConcertAdmin] Error fetching tier data:', tierError);
+        }
+
+        // Build tier prices from Supabase
         const tierPrices: Record<string, { name: string; price: number }> = {};
-        if (tierConfig && !tierConfigError) {
-            tierConfig.forEach((t: { tier: string; price: number; description: string | null }) => {
-                tierPrices[t.tier.toLowerCase()] = {
-                    name: t.description || DEFAULT_TIER_PRICES[t.tier.toLowerCase()]?.name || t.tier,
-                    price: t.price,
+        const tierInventory: Record<string, { total: number; sold: number }> = {};
+
+        if (tierData) {
+            tierData.forEach((t) => {
+                const normalizedTier = t.tier.toLowerCase();
+                tierPrices[normalizedTier] = {
+                    name: t.description || capitalizeTier(t.tier),
+                    price: t.price || 0,
+                };
+                tierInventory[normalizedTier] = {
+                    total: t.total_tickets || 0,
+                    sold: t.sold_tickets || 0,
                 };
             });
         }
-        // Fill in missing tiers with defaults
+
+        // Fill in missing tiers with placeholder values
         VALID_TIERS.forEach(tier => {
             if (!tierPrices[tier]) {
-                tierPrices[tier] = DEFAULT_TIER_PRICES[tier] || { name: tier, price: 0 };
+                tierPrices[tier] = { name: capitalizeTier(tier), price: 0 };
+            }
+            if (!tierInventory[tier]) {
+                tierInventory[tier] = { total: 0, sold: 0 };
             }
         });
 
@@ -65,6 +78,7 @@ export async function GET(request: NextRequest) {
                 pending: number;
                 sold: number;
                 revenue: number;
+                total: number;
             }>,
             totalSold: 0,
             totalPending: 0,
@@ -72,30 +86,35 @@ export async function GET(request: NextRequest) {
             recentOrders: [] as typeof orders,
         };
 
-        // Initialize tier stats
+        // Initialize tier stats - use Redis for available count (real-time)
         VALID_TIERS.forEach(tier => {
+            const inv = tierInventory[tier];
+            // Redis has the real-time available count
+            const redisAvailable = redisInventory[tier] ?? 0;
             stats.tiers[tier] = {
-                available: redisInventory[tier] || 0,
+                available: redisAvailable,
+                total: inv.total,
                 pending: 0,
-                sold: 0,
-                revenue: 0,
+                sold: inv.sold,
+                revenue: inv.sold * (tierPrices[tier]?.price || 0),
             };
         });
 
-        // Process orders
+        // Process orders to calculate pending count
         (orders || []).forEach(order => {
             const tier = order.tier?.toLowerCase();
             if (tier && stats.tiers[tier]) {
-                if (order.status === 'paid') {
-                    stats.tiers[tier].sold += order.quantity;
-                    stats.tiers[tier].revenue += order.quantity * (tierPrices[tier]?.price || 0);
-                    stats.totalSold += order.quantity;
-                    stats.totalRevenue += order.quantity * (tierPrices[tier]?.price || 0);
-                } else if (order.status === 'pending') {
+                if (order.status === 'pending') {
                     stats.tiers[tier].pending += order.quantity;
                     stats.totalPending += order.quantity;
                 }
             }
+        });
+
+        // Calculate totals
+        VALID_TIERS.forEach(tier => {
+            stats.totalSold += stats.tiers[tier].sold;
+            stats.totalRevenue += stats.tiers[tier].revenue;
         });
 
         // Recent orders (last 20)
@@ -134,7 +153,9 @@ export async function POST(request: NextRequest) {
             }
 
             const normalizedTier = tier.toLowerCase();
-            const updates: { description?: string; price?: number } = {};
+            const updates: { description?: string; price?: number; updated_at: string } = {
+                updated_at: new Date().toISOString(),
+            };
 
             if (name !== undefined) {
                 updates.description = name;
@@ -149,32 +170,41 @@ export async function POST(request: NextRequest) {
                 updates.price = price;
             }
 
-            if (Object.keys(updates).length === 0) {
+            if (Object.keys(updates).length === 1) {
                 return NextResponse.json(
                     { error: 'No updates provided' },
                     { status: 400 }
                 );
             }
 
-            // Upsert to Supabase (update if exists, insert if not)
-            const { error: upsertError } = await supabase
+            // Update in Supabase
+            const { error: updateError } = await supabase
                 .from('concert_ticket_inventory')
-                .upsert({
-                    tier: normalizedTier,
-                    total_tickets: 0, // Default for new rows
-                    sold_tickets: 0,  // Default for new rows
-                    ...updates,
-                    updated_at: new Date().toISOString(),
-                }, { onConflict: 'tier', ignoreDuplicates: false });
+                .update(updates)
+                .eq('tier', normalizedTier);
 
-            if (upsertError) {
-                console.error('[ConcertAdmin] Error updating tier config:', upsertError);
-                throw upsertError;
+            if (updateError) {
+                // If update fails (row doesn't exist), try insert
+                const { error: insertError } = await supabase
+                    .from('concert_ticket_inventory')
+                    .insert({
+                        tier: normalizedTier,
+                        total_tickets: 0,
+                        sold_tickets: 0,
+                        price: price || 0,
+                        description: name || capitalizeTier(normalizedTier),
+                        updated_at: new Date().toISOString(),
+                    });
+
+                if (insertError) {
+                    console.error('[ConcertAdmin] Error updating tier config:', insertError);
+                    throw insertError;
+                }
             }
 
             return NextResponse.json({
                 success: true,
-                message: `Tier "${normalizedTier}" configuration updated`,
+                message: `Tier "${capitalizeTier(normalizedTier)}" configuration updated`,
                 tier: normalizedTier,
                 updates,
             });
@@ -196,58 +226,132 @@ export async function POST(request: NextRequest) {
         }
 
         const normalizedTier = tier.toLowerCase();
-        let newCount: number;
+
+        // Get current inventory from Supabase
+        const { data: currentData } = await supabase
+            .from('concert_ticket_inventory')
+            .select('total_tickets, sold_tickets, price, description')
+            .eq('tier', normalizedTier)
+            .single();
+
+        const rowExists = !!currentData;
+        const currentTotal = currentData?.total_tickets || 0;
+        const currentSold = currentData?.sold_tickets || 0;
+        let newTotal: number;
+        let newAvailable: number;
 
         switch (action) {
             case 'initialize':
-                // Set inventory to exact value in Redis
+                // Set inventory to exact value
                 if (quantity < 0) {
                     return NextResponse.json(
                         { error: 'Cannot initialize with negative quantity' },
                         { status: 400 }
                     );
                 }
-                await initializeTierInventory(normalizedTier, quantity);
 
-                // Also update total_tickets in Supabase for reference
-                await supabase
-                    .from('concert_ticket_inventory')
-                    .upsert({
-                        tier: normalizedTier,
-                        total_tickets: quantity,
-                        updated_at: new Date().toISOString(),
-                    }, { onConflict: 'tier' });
+                // Update or insert in Supabase
+                if (rowExists) {
+                    const { error: updateError } = await supabase
+                        .from('concert_ticket_inventory')
+                        .update({
+                            total_tickets: quantity,
+                            updated_at: new Date().toISOString(),
+                        })
+                        .eq('tier', normalizedTier);
+                    if (updateError) throw updateError;
+                } else {
+                    const { error: insertError } = await supabase
+                        .from('concert_ticket_inventory')
+                        .insert({
+                            tier: normalizedTier,
+                            total_tickets: quantity,
+                            sold_tickets: 0,
+                            price: 0,
+                            description: capitalizeTier(normalizedTier),
+                            updated_at: new Date().toISOString(),
+                        });
+                    if (insertError) throw insertError;
+                }
 
-                newCount = quantity;
+                // Sync Redis with available count (total - sold)
+                newAvailable = quantity - currentSold;
+                await initializeTierInventory(normalizedTier, newAvailable);
+                newTotal = quantity;
                 break;
 
             case 'add':
-                // Add tickets to Redis inventory
+                // Add tickets to inventory
                 if (quantity <= 0) {
                     return NextResponse.json(
                         { error: 'Add quantity must be positive' },
                         { status: 400 }
                     );
                 }
-                newCount = await adjustTierInventory(normalizedTier, quantity);
+
+                newTotal = currentTotal + quantity;
+
+                // Update or insert in Supabase
+                if (rowExists) {
+                    const { error: updateError } = await supabase
+                        .from('concert_ticket_inventory')
+                        .update({
+                            total_tickets: newTotal,
+                            updated_at: new Date().toISOString(),
+                        })
+                        .eq('tier', normalizedTier);
+                    if (updateError) throw updateError;
+                } else {
+                    const { error: insertError } = await supabase
+                        .from('concert_ticket_inventory')
+                        .insert({
+                            tier: normalizedTier,
+                            total_tickets: newTotal,
+                            sold_tickets: 0,
+                            price: 0,
+                            description: capitalizeTier(normalizedTier),
+                            updated_at: new Date().toISOString(),
+                        });
+                    if (insertError) throw insertError;
+                }
+
+                // Add to Redis as well
+                newAvailable = await adjustTierInventory(normalizedTier, quantity);
                 break;
 
             case 'remove':
-                // Remove tickets from Redis inventory
+                // Remove tickets from inventory
                 if (quantity <= 0) {
                     return NextResponse.json(
                         { error: 'Remove quantity must be positive' },
                         { status: 400 }
                     );
                 }
-                const currentCount = await getAvailableTickets(normalizedTier);
-                if (quantity > currentCount) {
+
+                // Check Redis for actual available count
+                const redisAvailable = await getAvailableTickets(normalizedTier);
+                if (quantity > redisAvailable) {
                     return NextResponse.json(
-                        { error: `Cannot remove ${quantity} tickets. Only ${currentCount} available.` },
+                        { error: `Cannot remove ${quantity} tickets. Only ${redisAvailable} available in Redis.` },
                         { status: 400 }
                     );
                 }
-                newCount = await adjustTierInventory(normalizedTier, -quantity);
+
+                newTotal = currentTotal - quantity;
+
+                // Update Supabase
+                const { error: removeError } = await supabase
+                    .from('concert_ticket_inventory')
+                    .update({
+                        total_tickets: newTotal,
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq('tier', normalizedTier);
+
+                if (removeError) throw removeError;
+
+                // Remove from Redis as well
+                newAvailable = await adjustTierInventory(normalizedTier, -quantity);
                 break;
 
             default:
@@ -261,10 +365,11 @@ export async function POST(request: NextRequest) {
             success: true,
             message: `${action} completed successfully`,
             tier: normalizedTier,
-            newCount,
+            newCount: newAvailable!,
+            newTotal: newTotal!,
             storage: {
-                redis: 'Updated (real-time inventory)',
-                supabase: action === 'initialize' ? 'Updated (total_tickets reference)' : 'No change',
+                redis: 'Updated',
+                supabase: 'Updated',
             },
         });
 

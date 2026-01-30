@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase';
-import { getAllTierAvailability, getAvailableTickets } from '@/app/lib/concert-redis';
 import { availabilityRatelimit, getClientIP } from '@/app/lib/concert-ratelimit';
 import type { TierAvailability } from '@/app/types/concert';
+
+// Capitalize first letter of tier name for display
+function capitalizeTier(tier: string): string {
+    return tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase();
+}
 
 export async function GET(request: NextRequest) {
     try {
@@ -30,26 +34,18 @@ export async function GET(request: NextRequest) {
 
         if (tiersError) throw tiersError;
 
-        // Get live availability from Redis
-        const redisAvailability = await getAllTierAvailability();
-
-        // Combine metadata from Supabase with live counts from Redis
+        // Build availability from Supabase data only (no Redis for user-facing to reduce load)
         const availability: TierAvailability[] = (tiers || []).map(tier => {
-            const tierKey = tier.tier.toLowerCase();
-            // Use Redis count if available, otherwise fall back to Supabase calculation
-            const redisCount = redisAvailability[tierKey];
-            const available = redisCount !== undefined
-                ? redisCount
-                : Math.max(0, tier.total_tickets - tier.sold_tickets);
+            // Calculate available from Supabase data
+            const available = Math.max(0, tier.total_tickets - tier.sold_tickets);
 
             return {
-                tier: tier.tier,
+                tier: capitalizeTier(tier.tier), // Capitalize for display
                 price: tier.price,
-                description: tier.description,
+                description: tier.description || capitalizeTier(tier.tier),
                 total: tier.total_tickets,
                 available,
-                sold: tier.total_tickets - available,
-                source: redisCount !== undefined ? 'redis' : 'supabase', // For debugging
+                sold: tier.sold_tickets,
             };
         });
 

@@ -25,11 +25,16 @@ interface SelectedTier {
     price: number;
 }
 
-interface ReservationData {
+interface ReservationItem {
     checkoutId: string;
-    expiresAt: string;
     tier: string;
     quantity: number;
+    price: number;
+}
+
+interface ReservationData {
+    items: ReservationItem[];
+    expiresAt: string;
 }
 
 // Generate a unique session ID
@@ -80,8 +85,7 @@ export default function TicketingPage() {
 
     useEffect(() => {
         fetchTiers();
-        const interval = setInterval(fetchTiers, 30000);
-        return () => clearInterval(interval);
+        // Removed auto-refresh to reduce server load - tickets refresh on page reload
     }, [fetchTiers]);
 
     // Countdown timer for reservation
@@ -143,7 +147,7 @@ export default function TicketingPage() {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    // Reserve tickets via soft-lock
+    // Reserve tickets via soft-lock (supports multiple tiers)
     const handleReserve = async () => {
         if (isReserving || selectedTiers.length === 0) return;
 
@@ -152,34 +156,55 @@ export default function TicketingPage() {
 
         try {
             const sessionId = getSessionId();
-            const selected = selectedTiers[0]; // For now, handle one tier at a time
+            const reservedItems: ReservationItem[] = [];
+            let latestExpiresAt = '';
 
-            const response = await fetch('/api/concert/soft-lock', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tier: selected.tier,
-                    quantity: selected.quantity,
-                    sessionId,
-                }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                setReservation({
-                    checkoutId: data.checkoutId,
-                    expiresAt: data.expiresAt,
-                    tier: selected.tier,
-                    quantity: selected.quantity,
+            // Reserve each tier sequentially
+            for (const selected of selectedTiers) {
+                const response = await fetch('/api/concert/soft-lock', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tier: selected.tier,
+                        quantity: selected.quantity,
+                        sessionId,
+                    }),
                 });
-                setShowCheckout(true);
-            } else {
-                setSubmitMessage(data.error || 'Failed to reserve tickets');
-                if (data.retryAfter) {
-                    setSubmitMessage(`${data.error} (retry in ${data.retryAfter}s)`);
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    reservedItems.push({
+                        checkoutId: data.checkoutId,
+                        tier: selected.tier,
+                        quantity: selected.quantity,
+                        price: selected.price,
+                    });
+                    latestExpiresAt = data.expiresAt;
+                } else {
+                    // If one fails, release all previously reserved
+                    for (const item of reservedItems) {
+                        try {
+                            await fetch('/api/concert/release-lock', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ checkoutId: item.checkoutId }),
+                            });
+                        } catch (e) {
+                            console.error('Error releasing lock:', e);
+                        }
+                    }
+                    setSubmitMessage(data.error || `Failed to reserve ${selected.tier} tickets`);
+                    return;
                 }
             }
+
+            // All tiers reserved successfully
+            setReservation({
+                items: reservedItems,
+                expiresAt: latestExpiresAt,
+            });
+            setShowCheckout(true);
         } catch (error) {
             console.error('Error reserving tickets:', error);
             setSubmitMessage('Failed to reserve tickets. Please try again.');
@@ -188,7 +213,7 @@ export default function TicketingPage() {
         }
     };
 
-    // Complete order with checkout_id
+    // Complete order with all checkout_ids
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (isSubmitting || !reservation) return;
@@ -197,11 +222,12 @@ export default function TicketingPage() {
         setSubmitMessage('');
 
         try {
+            // Send all checkout IDs to process together
             const response = await fetch('/api/concert/order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    checkoutId: reservation.checkoutId,
+                    checkoutIds: reservation.items.map(item => item.checkoutId),
                     ...formData,
                 }),
             });
@@ -225,19 +251,20 @@ export default function TicketingPage() {
         }
     };
 
-    // Cancel reservation
+    // Cancel all reservations
     const handleCancelReservation = async () => {
         if (reservation) {
-            try {
-                await fetch('/api/concert/release-lock', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        checkoutId: reservation.checkoutId,
-                    }),
-                });
-            } catch (e) {
-                console.error('Error releasing lock:', e);
+            // Release all locks
+            for (const item of reservation.items) {
+                try {
+                    await fetch('/api/concert/release-lock', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ checkoutId: item.checkoutId }),
+                    });
+                } catch (e) {
+                    console.error('Error releasing lock:', e);
+                }
             }
         }
         setReservation(null);
@@ -281,7 +308,7 @@ export default function TicketingPage() {
 
                     <div className="mb-6 p-4 rounded-xl border border-dashed" style={{ borderColor: theme.border, backgroundColor: 'rgba(255,255,255,0.02)' }}>
                         <p className="text-sm" style={{ color: theme.textMuted }}>
-                            Please check your inbox (and spam folder) for an email from <strong>tickets@cypvasai.org</strong> containing your e-tickets.
+                            Please check your inbox (and spam folder) for an email from <strong>tickets@concert.cypvasai.org</strong> containing your e-tickets.
                             Show the QR code from the email at the entrance.
                         </p>
                     </div>
@@ -345,18 +372,20 @@ export default function TicketingPage() {
                         style={{ backgroundColor: theme.surface, border: `1px solid ${theme.border}` }}
                     >
                         <h2 className="font-bold mb-4" style={{ color: theme.text }}>Reserved Tickets</h2>
-                        <div className="flex justify-between py-2" style={{ borderBottom: `1px solid ${theme.border}` }}>
-                            <span style={{ color: theme.text }}>
-                                {reservation.tier} × {reservation.quantity}
-                            </span>
-                            <span style={{ color: theme.primary }}>
-                                ₹{(reservation.quantity * (selectedTiers.find(s => s.tier === reservation.tier)?.price || 0)).toLocaleString()}
-                            </span>
-                        </div>
-                        <div className="flex justify-between pt-4 mt-2">
+                        {reservation.items.map((item, index) => (
+                            <div key={item.checkoutId} className="flex justify-between py-2" style={{ borderBottom: index < reservation.items.length - 1 ? `1px solid ${theme.border}` : 'none' }}>
+                                <span style={{ color: theme.text }}>
+                                    {item.tier} × {item.quantity}
+                                </span>
+                                <span style={{ color: theme.primary }}>
+                                    ₹{(item.quantity * item.price).toLocaleString()}
+                                </span>
+                            </div>
+                        ))}
+                        <div className="flex justify-between pt-4 mt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
                             <span className="font-bold text-lg" style={{ color: theme.text }}>Total</span>
                             <span className="font-bold text-2xl" style={{ color: theme.primary }}>
-                                ₹{getTotalAmount().toLocaleString()}
+                                ₹{reservation.items.reduce((sum, item) => sum + item.quantity * item.price, 0).toLocaleString()}
                             </span>
                         </div>
                     </div>
@@ -528,7 +557,10 @@ export default function TicketingPage() {
                                             ₹{tier.price.toLocaleString()}
                                         </p>
                                         <p className="text-sm" style={{ color: theme.textMuted }}>
-                                            {tier.available} of {tier.total} available
+                                            {tier.total > 0
+                                                ? `${tier.available} of ${tier.total} remaining`
+                                                : `${tier.available} available`
+                                            }
                                         </p>
                                     </div>
 

@@ -26,157 +26,173 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { checkoutId, name, email, phone } = body;
+        const { checkoutIds, checkoutId, name, email, phone } = body;
+
+        // Support both single checkoutId and array of checkoutIds
+        const allCheckoutIds: string[] = checkoutIds || (checkoutId ? [checkoutId] : []);
 
         // Validate required fields
-        if (!checkoutId || !name || !email || !phone) {
+        if (allCheckoutIds.length === 0 || !name || !email || !phone) {
             return NextResponse.json(
-                { error: 'Missing required fields (checkoutId, name, email, phone)' },
+                { error: 'Missing required fields (checkoutId(s), name, email, phone)' },
                 { status: 400 }
             );
         }
 
         const supabase = createServerSupabaseClient();
-
-        // Get the pending order by checkout_id
-        const { data: order, error: orderError } = await supabase
-            .from('concert_orders')
-            .select('*')
-            .eq('checkout_id', checkoutId)
-            .single();
-
-        if (orderError || !order) {
-            return NextResponse.json(
-                { error: 'Order not found. Your reservation may have expired.' },
-                { status: 404 }
-            );
-        }
-
-        // Check if order is still pending
-        if (order.status !== 'pending') {
-            if (order.status === 'paid') {
-                return NextResponse.json(
-                    { error: 'This order has already been completed.' },
-                    { status: 400 }
-                );
-            }
-            if (order.status === 'expired') {
-                return NextResponse.json(
-                    { error: 'Your reservation has expired. Please start over.' },
-                    { status: 400 }
-                );
-            }
-            return NextResponse.json(
-                { error: `Invalid order status: ${order.status}` },
-                { status: 400 }
-            );
-        }
-
-        // Check if reservation hasn't expired
-        if (order.expires_at && new Date(order.expires_at) < new Date()) {
-            return NextResponse.json(
-                { error: 'Your reservation has expired. Please start over.' },
-                { status: 400 }
-            );
-        }
-
-        const { tier, quantity } = order;
         const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const purchaseDate = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
-        // Get tier metadata (price) from Supabase
-        const { data: tierData } = await supabase
-            .from('concert_ticket_inventory')
-            .select('price')
-            .eq('tier', tier)
-            .single();
-
-        const price = tierData?.price || 0;
-
-        // Create tickets and collect ticket info for email
-        const tickets = [];
+        // Collect all tickets across all tiers for consolidated email
+        const allTickets: { id: string; tier: string; status: string }[] = [];
         const ticketInfos: TicketInfo[] = [];
+        let totalAmount = 0;
+        let totalTicketCount = 0;
 
-        for (let i = 0; i < quantity; i++) {
-            const ticketId = crypto.randomUUID();
-            const qrPayload = createQRPayload(ticketId, name, tier);
-
-            const metadata: TicketMetadata = {
-                buyer_name: name,
-                buyer_email: email,
-                buyer_phone: phone,
-                order_id: orderId,
-                qr_data: qrPayload,
-                purchase_date: purchaseDate,
-            };
-
-            // Insert ticket record
-            const { data: ticket, error: ticketError } = await supabase
-                .from('tickets')
-                .insert({
-                    id: ticketId,
-                    tier,
-                    status: 'active',
-                    metadata,
-                })
-                .select()
+        // Process each checkout (each tier)
+        for (const cid of allCheckoutIds) {
+            // Get the pending order by checkout_id
+            const { data: order, error: orderError } = await supabase
+                .from('concert_orders')
+                .select('*')
+                .eq('checkout_id', cid)
                 .single();
 
-            if (ticketError) throw ticketError;
+            if (orderError || !order) {
+                console.error(`[Order] Order not found for checkout_id: ${cid}`);
+                continue; // Skip if not found (shouldn't happen normally)
+            }
 
-            tickets.push(ticket);
+            // Check if order is still pending
+            if (order.status !== 'pending') {
+                console.log(`[Order] Skipping order ${cid} with status: ${order.status}`);
+                continue;
+            }
 
-            // Generate ticket data for PDF
-            const ticketData = {
-                ticketId,
-                orderId,
-                tier,
-                buyerName: name,
-                buyerEmail: email,
-                buyerPhone: phone,
-                purchaseDate,
-                qrData: qrPayload,
-                eventDetails: {
-                    name: 'CYP Concert 2026',
-                    date: 'Saturday, 21st March 2026',
-                    time: '6:00 PM Onwards',
-                    venue: 'GG College, Vasai',
-                },
-            };
+            // Check if reservation hasn't expired
+            if (order.expires_at && new Date(order.expires_at) < new Date()) {
+                console.log(`[Order] Order ${cid} has expired`);
+                continue;
+            }
 
-            // Generate PDF and get base64
-            const pdfBase64 = await generateTicketPDF(ticketData);
-            const fileName = `CYP-Concert-Ticket-${tier}-${ticketId.substring(0, 8)}.pdf`;
+            const { tier, quantity } = order;
 
-            ticketInfos.push({
-                ticketId,
-                tier,
-                qrPayload,
-                fileName,
-                pdfBase64,
-            });
+            // Get tier metadata (price) from Supabase
+            const { data: tierData } = await supabase
+                .from('concert_ticket_inventory')
+                .select('price')
+                .eq('tier', tier)
+                .single();
+
+            const price = tierData?.price || 0;
+            totalAmount += price * quantity;
+            totalTicketCount += quantity;
+
+            // Create tickets for this tier
+            for (let i = 0; i < quantity; i++) {
+                const ticketId = crypto.randomUUID();
+                const qrPayload = createQRPayload(ticketId, name, tier);
+
+                const metadata: TicketMetadata = {
+                    buyer_name: name,
+                    buyer_email: email,
+                    buyer_phone: phone,
+                    order_id: orderId,
+                    qr_data: qrPayload,
+                    purchase_date: purchaseDate,
+                };
+
+                // Insert ticket record with direct columns
+                const { data: ticket, error: ticketError } = await supabase
+                    .from('tickets')
+                    .insert({
+                        id: ticketId,
+                        tier,
+                        status: 'active',
+                        name,
+                        email,
+                        phone,
+                        payment_amount: price,
+                        order_id: orderId,
+                        qr_data: qrPayload,
+                        metadata,
+                    })
+                    .select()
+                    .single();
+
+                if (ticketError) throw ticketError;
+
+                allTickets.push({ id: ticket.id, tier: ticket.tier, status: ticket.status });
+
+                // Generate ticket data for PDF
+                const ticketData = {
+                    ticketId,
+                    orderId,
+                    tier,
+                    buyerName: name,
+                    buyerEmail: email,
+                    buyerPhone: phone,
+                    purchaseDate,
+                    qrData: qrPayload,
+                    eventDetails: {
+                        name: 'CYP Concert 2026',
+                        date: 'Saturday, 21st March 2026',
+                        time: '6:00 PM Onwards',
+                        venue: 'Rumao World School, Giriz, Vasai',
+                    },
+                };
+
+                // Generate PDF and get base64
+                const pdfBase64 = await generateTicketPDF(ticketData);
+                const fileName = `CYP-Concert-Ticket-${tier}-${ticketId.substring(0, 8)}.pdf`;
+
+                ticketInfos.push({
+                    ticketId,
+                    tier,
+                    qrPayload,
+                    fileName,
+                    pdfBase64,
+                });
+            }
+
+            // Update inventory: atomic increment of sold count in Supabase
+            // Use lowercase tier name to match inventory table
+            const normalizedTier = tier.toLowerCase();
+            const { data: newSoldCount, error: inventoryError } = await supabase
+                .rpc('increment_sold_tickets', { tier_name: normalizedTier, count: quantity });
+
+            if (inventoryError) {
+                console.error(`[Order] Error updating inventory for ${normalizedTier}:`, inventoryError);
+            } else {
+                console.log(`[Order] Updated ${normalizedTier} sold_tickets to ${newSoldCount}`);
+            }
+
+            // Update order status to PAID
+            await supabase
+                .from('concert_orders')
+                .update({
+                    status: 'paid',
+                    paid_at: new Date().toISOString(),
+                    name,
+                    email,
+                    phone,
+                    payment_amount: price * quantity,
+                })
+                .eq('checkout_id', cid);
+
+            // Delete reservation from Redis
+            await deleteReservation(cid);
         }
 
-        // Update inventory: increment sold count in Supabase (Redis already decremented)
-        await supabase.rpc('increment_sold_tickets', { tier_name: tier, count: quantity });
+        // If no tickets were created, return error
+        if (allTickets.length === 0) {
+            return NextResponse.json(
+                { error: 'No valid orders found. Your reservations may have expired.' },
+                { status: 400 }
+            );
+        }
 
-        // Update order status to PAID
-        await supabase
-            .from('concert_orders')
-            .update({
-                status: 'paid',
-                paid_at: new Date().toISOString(),
-                name,
-                email,
-                phone,
-                payment_amount: price * quantity,
-            })
-            .eq('checkout_id', checkoutId);
-
-        // Delete reservation from Redis (it's now permanent)
-        await deleteReservation(checkoutId);
-
-        // Send email
+        // Send ONE consolidated email with ALL tickets
         let emailStatus = 'pending';
 
         if (isQStashConfigured()) {
@@ -201,15 +217,12 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: `Successfully purchased ${quantity} ${tier} ticket(s)! Check your email for the tickets.`,
+            message: `Successfully purchased ${totalTicketCount} ticket(s)! Check your email for the tickets.`,
             orderId,
-            checkoutId,
+            checkoutIds: allCheckoutIds,
             emailStatus,
-            tickets: tickets.map(t => ({
-                id: t.id,
-                tier: t.tier,
-                status: t.status,
-            })),
+            totalAmount,
+            tickets: allTickets,
         });
 
     } catch (error) {

@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
             // Ticket was already scanned - check if it's a conflict
             const existingScannedAt = new Date(ticket.scanned_at).getTime();
             const newScannedAt = new Date(scannedAt).getTime();
-            const existingDeviceId = ticket.metadata?.scanned_by_device;
+            const existingDeviceId = ticket.scanned_by;
 
             // If scanned by different device, it's a conflict
             if (existingDeviceId && existingDeviceId !== deviceId) {
@@ -80,10 +80,7 @@ export async function POST(request: NextRequest) {
             .update({
                 status: 'used',
                 scanned_at: scannedAt,
-                metadata: {
-                    ...ticket.metadata,
-                    scanned_by_device: deviceId,
-                },
+                scanned_by: deviceId,
             })
             .eq('id', ticketId);
 

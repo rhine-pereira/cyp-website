@@ -82,19 +82,31 @@ export async function sendTicketEmail(
   purchaseDate: string,
   tickets: TicketInfo[]
 ): Promise<EmailResponse> {
-  // Generate HTML for multiple tickets
-  const ticketCount = tickets.length;
-  const tier = tickets[0]?.tier || 'Standard';
+  // Group tickets by tier
+  const ticketsByTier = tickets.reduce((acc, ticket) => {
+    const tier = ticket.tier;
+    if (!acc[tier]) {
+      acc[tier] = [];
+    }
+    acc[tier].push(ticket);
+    return acc;
+  }, {} as Record<string, TicketInfo[]>);
+
+  const tierSummary = Object.entries(ticketsByTier)
+    .map(([tier, tierTickets]) => `${tierTickets.length}x ${tier}`)
+    .join(' + ');
 
   const htmlBody = generateTicketEmailHtml({
     buyerName,
-    tier,
-    ticketCount,
+    tierSummary,
+    ticketsByTier,
+    ticketCount: tickets.length,
     ticketIds: tickets.map(t => t.ticketId),
     purchaseDate,
     eventDate: 'Saturday, 21st March 2026',
     eventTime: '6:00 PM Onwards',
-    venue: 'GG College, Vasai',
+    venue: 'Rumao World School, Giriz, Vasai',
+    mapUrl: 'https://maps.app.goo.gl/wt2GbSbStjn9KF6y8',
   });
 
   // Collect all PDF attachments
@@ -104,9 +116,9 @@ export async function sendTicketEmail(
     ContentType: 'application/pdf',
   }));
 
-  const subject = ticketCount === 1
-    ? `🎟️ Your CYP Concert Ticket - ${tier}`
-    : `🎟️ Your ${ticketCount} CYP Concert Tickets - ${tier}`;
+  const subject = tickets.length === 1
+    ? `🎟️ Your CYP Concert Ticket - ${tickets[0].tier}`
+    : `🎟️ Your ${tickets.length} CYP Concert Tickets`;
 
   return sendEmail({
     to: buyerEmail,
@@ -119,18 +131,35 @@ export async function sendTicketEmail(
 
 interface TicketEmailData {
   buyerName: string;
-  tier: string;
+  tierSummary: string;
+  ticketsByTier: Record<string, TicketInfo[]>;
   ticketCount: number;
   ticketIds: string[];
   purchaseDate: string;
   eventDate: string;
   eventTime: string;
   venue: string;
+  mapUrl?: string;
 }
 
 function generateTicketEmailHtml(data: TicketEmailData): string {
-  const ticketIdsHtml = data.ticketIds
-    .map((id, i) => `<code style="color: #e94560; display: block; margin: 2px 0;">Ticket ${i + 1}: ${id.substring(0, 8)}...</code>`)
+  // Generate HTML for each tier group
+  const tierGroupsHtml = Object.entries(data.ticketsByTier)
+    .map(([tier, tierTickets]) => {
+      const ticketIdsHtml = tierTickets
+        .map((t, i) => `<code style="color: #e94560; display: block; margin: 2px 0;">Ticket ${i + 1}: ${t.ticketId.substring(0, 8)}...</code>`)
+        .join('');
+      return `
+        <div style="margin-bottom: 15px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+          <span style="display: inline-block; background: linear-gradient(135deg, #e94560 0%, #533483 100%); color: #ffffff; padding: 6px 16px; border-radius: 15px; font-weight: bold; font-size: 14px; margin-bottom: 10px;">
+            ${tierTickets.length}x ${tier} TICKET${tierTickets.length > 1 ? 'S' : ''}
+          </span>
+          <div style="text-align: left; color: #a0a0b0; font-size: 12px; margin-top: 10px;">
+            ${ticketIdsHtml}
+          </div>
+        </div>
+      `;
+    })
     .join('');
 
   const ticketLabel = data.ticketCount === 1 ? 'ticket' : 'tickets';
@@ -184,14 +213,14 @@ function generateTicketEmailHtml(data: TicketEmailData): string {
                     <!-- Tier Badge -->
                     <div style="text-align: center; margin-bottom: 20px;">
                       <span style="display: inline-block; background: linear-gradient(135deg, #e94560 0%, #533483 100%); color: #ffffff; padding: 8px 24px; border-radius: 20px; font-weight: bold; font-size: 18px;">
-                        ${data.ticketCount}x ${data.tier} TICKET${data.ticketCount > 1 ? 'S' : ''}
+                        ${data.tierSummary} TICKETS
                       </span>
                     </div>
                     
-                    <!-- Ticket IDs -->
-                    <p style="text-align: center; color: #a0a0b0; font-size: 12px; margin: 10px 0 20px 0;">
-                      ${ticketIdsHtml}
-                    </p>
+                    <!-- Tickets by Tier -->
+                    <div style="text-align: center; margin: 10px 0 20px 0;">
+                      ${tierGroupsHtml}
+                    </div>
                     
                     <!-- Event Details -->
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
@@ -220,7 +249,10 @@ function generateTicketEmailHtml(data: TicketEmailData): string {
                           <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                             <tr>
                               <td style="color: #a0a0b0; font-size: 14px; width: 40px;">📍</td>
-                              <td style="color: #ffffff; font-size: 14px;">${data.venue}</td>
+                              <td style="color: #ffffff; font-size: 14px;">
+                                ${data.venue}
+                                ${data.mapUrl ? `<br/><a href="${data.mapUrl}" style="color: #e94560; text-decoration: none; font-size: 12px;">📍 View on Google Maps →</a>` : ''}
+                              </td>
                             </tr>
                           </table>
                         </td>

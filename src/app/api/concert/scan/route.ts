@@ -97,7 +97,9 @@ export async function POST(request: NextRequest) {
             ticket: {
                 id: ticket.id,
                 tier: ticket.tier,
-                buyerName: ticket.metadata?.buyer_name,
+                buyerName: ticket.name,
+                buyerEmail: ticket.email,
+                buyerPhone: ticket.phone,
             },
         });
 

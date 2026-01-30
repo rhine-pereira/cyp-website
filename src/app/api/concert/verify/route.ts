@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
                     id: ticket.id,
                     tier: ticket.tier,
                     status: ticket.status,
-                    buyerName: ticket.metadata?.buyer_name,
+                    buyerName: ticket.name,
                     scannedAt: ticket.scanned_at,
                 },
             });
@@ -91,11 +91,11 @@ export async function POST(request: NextRequest) {
                 id: ticket.id,
                 tier: ticket.tier,
                 status: ticket.status,
-                buyerName: ticket.metadata?.buyer_name,
-                buyerEmail: ticket.metadata?.buyer_email,
-                buyerPhone: ticket.metadata?.buyer_phone,
-                orderId: ticket.metadata?.order_id,
-                purchaseDate: ticket.metadata?.purchase_date,
+                buyerName: ticket.name,
+                buyerEmail: ticket.email,
+                buyerPhone: ticket.phone,
+                orderId: ticket.order_id,
+                paymentAmount: ticket.payment_amount,
             },
         });
 

@@ -22,7 +22,7 @@ const CONCERT_DETAILS = {
     tagline: "An Evening of Praise & Worship",
     date: "Saturday, 21st March 2026",
     time: "6:00 PM Onwards",
-    venue: "Rumao World School",
+    venue: "Rumao World School, Giriz, Vasai",
     venueAddress: "Rumao World School, Giriz, Vasai, Maharashtra",
     description: `Join us for an unforgettable evening of worship, music, and community! 
   Experience powerful performances, soul-stirring worship sessions, and connect with 

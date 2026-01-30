@@ -69,7 +69,7 @@ export default function ConcertAdminPage() {
 
     // Inventory management state (separate section)
     const [showInventoryPanel, setShowInventoryPanel] = useState(false);
-    const [inventoryTier, setInventoryTier] = useState('general');
+    const [inventoryTier, setInventoryTier] = useState('silver');
     const [inventoryQuantity, setInventoryQuantity] = useState<number>(100);
     const [inventoryAction, setInventoryAction] = useState<'initialize' | 'add' | 'remove'>('add');
     const [inventoryLoading, setInventoryLoading] = useState(false);
