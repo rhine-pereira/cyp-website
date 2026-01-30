@@ -1,4 +1,5 @@
 import { sendEmailWithAttachmentsViaSES } from './ses';
+import { isEmailSuppressed } from './email-suppression';
 import type { QRPayload } from '@/app/types/concert';
 
 export interface EmailAttachment {
@@ -20,12 +21,25 @@ interface EmailResponse {
   success: boolean;
   messageId?: string;
   provider: string;
+  suppressed?: boolean;
 }
 
 /**
  * Send an email using AWS SES
+ * Checks suppression list before sending to protect sender reputation
  */
 export async function sendEmail(options: EmailOptions): Promise<EmailResponse> {
+  // Check if email is suppressed (bounced/complained)
+  const suppressed = await isEmailSuppressed(options.to);
+  if (suppressed) {
+    console.log(`[email-service] Skipping email to ${options.to} - address is suppressed`);
+    return {
+      success: false,
+      provider: 'ses',
+      suppressed: true,
+    };
+  }
+
   const result = await sendEmailWithAttachmentsViaSES({
     to: options.to,
     subject: options.subject,
