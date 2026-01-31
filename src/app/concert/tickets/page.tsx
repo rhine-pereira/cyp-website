@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import VenueMap from "./VenueMap";
 import type { TierAvailability } from "@/app/types/concert";
 
 const theme = {
@@ -18,6 +19,8 @@ const theme = {
     success: '#22c55e',
     error: '#ef4444',
 };
+
+const MAX_TICKETS_PER_SESSION = 20;
 
 interface SelectedTier {
     tier: string;
@@ -128,10 +131,18 @@ export default function TicketingPage() {
     const handleSelectTier = (tier: TierAvailability, quantity: number) => {
         if (quantity < 0 || quantity > tier.available) return;
 
+        // Check total tickets limit
+        const currentOtherTiersTotal = selectedTiers
+            .filter(s => s.tier !== tier.tier)
+            .reduce((sum, s) => sum + s.quantity, 0);
+
+        const maxAllowedForThisTier = MAX_TICKETS_PER_SESSION - currentOtherTiersTotal;
+        const clampedQuantity = Math.min(quantity, maxAllowedForThisTier, tier.available);
+
         setSelectedTiers(prev => {
             const filtered = prev.filter(s => s.tier !== tier.tier);
-            if (quantity === 0) return filtered;
-            return [...filtered, { tier: tier.tier, quantity, price: tier.price }];
+            if (clampedQuantity === 0) return filtered;
+            return [...filtered, { tier: tier.tier, quantity: clampedQuantity, price: tier.price }];
         });
     };
 
@@ -141,6 +152,14 @@ export default function TicketingPage() {
 
     const getTotalTickets = () => {
         return selectedTiers.reduce((sum, s) => sum + s.quantity, 0);
+    };
+
+    // Calculate max tickets allowed for a specific tier (considering session limit)
+    const getMaxForTier = (tier: TierAvailability) => {
+        const currentForTier = selectedTiers.find(s => s.tier === tier.tier)?.quantity || 0;
+        const otherTiersTotal = getTotalTickets() - currentForTier;
+        const remainingAllowed = MAX_TICKETS_PER_SESSION - otherTiersTotal;
+        return Math.min(tier.available, remainingAllowed);
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -500,6 +519,12 @@ export default function TicketingPage() {
                     <p style={{ color: theme.textMuted }}>
                         CYP Concert 2026 • March 21, 2026
                     </p>
+                    <p className="text-sm mt-2" style={{ color: theme.accent }}>
+                        📌 Maximum {MAX_TICKETS_PER_SESSION} tickets per session
+                        {getTotalTickets() > 0 && (
+                            <span style={{ color: theme.textMuted }}> • Selected: {getTotalTickets()}/{MAX_TICKETS_PER_SESSION}</span>
+                        )}
+                    </p>
                 </div>
 
                 {/* Message Banner */}
@@ -516,6 +541,21 @@ export default function TicketingPage() {
                     </div>
                 )}
 
+                {/* Venue Layout Map */}
+                {/* <VenueMap
+                    tiers={tiers}
+                    selectedTiers={selectedTiers}
+                    onTierClick={(tier) => {
+                        if (tier.available > 0) {
+                            const current = selectedTiers.find(s => s.tier === tier.tier);
+                            const newQty = current ? Math.min(current.quantity + 1, tier.available, 10) : 1;
+                            handleSelectTier(tier, newQty);
+                            // Scroll to the tier card
+                            document.getElementById(`tier-${tier.tier}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }}
+                /> */}
+
                 {/* Tier Cards */}
                 <div className="space-y-4 mb-8">
                     {tiers.map((tier, index) => {
@@ -526,6 +566,7 @@ export default function TicketingPage() {
                         return (
                             <motion.div
                                 key={tier.tier}
+                                id={`tier-${tier.tier}`}
                                 className="p-6 rounded-2xl"
                                 style={{
                                     backgroundColor: theme.surface,
@@ -577,7 +618,7 @@ export default function TicketingPage() {
                                                 }}
                                             >
                                                 <option value={0} style={{ backgroundColor: theme.surface, color: theme.text }}>Select</option>
-                                                {[...Array(Math.min(tier.available, 10))].map((_, i) => (
+                                                {[...Array(getMaxForTier(tier))].map((_, i) => (
                                                     <option
                                                         key={i + 1}
                                                         value={i + 1}
