@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/app/lib/firebase-admin';
 import { FormLayout } from '@/app/types/form';
+import { invalidateForm } from '@/app/lib/form-cache';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,6 +34,9 @@ export async function POST(request: NextRequest) {
     delete updatePayload.spreadsheetId;
 
     await formRef.update(updatePayload);
+
+    // Invalidate cache for this form + the listing
+    invalidateForm(formData.id!);
 
     return NextResponse.json({ success: true });
   } catch (error) {

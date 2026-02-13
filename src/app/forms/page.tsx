@@ -3,8 +3,6 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import { db } from "@/app/lib/firebase";
 import { FormLayout } from "@/app/types/form";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
@@ -29,30 +27,14 @@ export default function FormsPage() {
   useEffect(() => {
     const fetchForms = async () => {
       try {
-        const formsRef = collection(db, "forms");
-        const q = query(formsRef, orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
-        const result: FormLayout[] = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          const toDate = (val: unknown): Date => {
-            if (!val) return new Date();
-            const maybeTs = val as { toDate?: () => Date };
-            if (typeof maybeTs?.toDate === "function") return maybeTs.toDate();
-            if (val instanceof Date) return val;
-            if (typeof val === "string" || typeof val === "number") {
-              const d = new Date(val);
-              return isNaN(d.getTime()) ? new Date() : d;
-            }
-            return new Date();
-          };
-          result.push({
-            id: doc.id,
-            ...data,
-            createdAt: toDate(data.createdAt),
-            updatedAt: toDate(data.updatedAt),
-          } as FormLayout);
-        });
+        const res = await fetch('/api/forms/list', { cache: 'no-store' });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Failed to load forms');
+        const result: FormLayout[] = (json.forms ?? []).map((f: Record<string, unknown>) => ({
+          ...f,
+          createdAt: f.createdAt ? new Date(f.createdAt as string) : new Date(),
+          updatedAt: f.updatedAt ? new Date(f.updatedAt as string) : new Date(),
+        }));
         setForms(result);
       } catch (e) {
         setError("Failed to load forms");

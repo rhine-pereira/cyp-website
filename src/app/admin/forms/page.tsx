@@ -72,6 +72,8 @@ export default function FormsManagementPage() {
     try {
       await deleteDoc(doc(db, 'forms', formId));
       setForms(forms.filter(form => form.id !== formId));
+      // Invalidate cache so end-user pages reflect the deletion
+      fetch('/api/forms/invalidate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ formId }) }).catch(() => { });
     } catch (error) {
       console.error('Error deleting form:', error);
       alert('Failed to delete form');
@@ -86,6 +88,8 @@ export default function FormsManagementPage() {
         updatedAt: new Date(),
       });
       setForms(prev => prev.map(f => f.id === formId ? { ...f, acceptingResponses: newValue, updatedAt: new Date() } as FormLayout : f));
+      // Invalidate cache so end-user pages reflect the change
+      fetch('/api/forms/invalidate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ formId }) }).catch(() => { });
     } catch (error) {
       console.error('Error updating acceptingResponses:', error);
       alert('Failed to update accepting responses');
@@ -100,6 +104,8 @@ export default function FormsManagementPage() {
         updatedAt: new Date(),
       });
       setForms(prev => prev.map(f => f.id === formId ? { ...f, promote: newValue, updatedAt: new Date() } as FormLayout : f));
+      // Invalidate cache so end-user pages reflect the change
+      fetch('/api/forms/invalidate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ formId }) }).catch(() => { });
     } catch (error) {
       console.error('Error updating promote:', error);
       alert('Failed to update promote status');
@@ -221,8 +227,8 @@ export default function FormsManagementPage() {
                       <button
                         onClick={() => toggleAccepting(form.id, form.acceptingResponses)}
                         className={`px-3 py-1 rounded-md text-sm border ${form.acceptingResponses === false
-                            ? 'bg-green-900/20 text-green-500 border-green-500/30 hover:bg-green-900/40'
-                            : 'bg-yellow-900/20 text-yellow-500 border-yellow-500/30 hover:bg-yellow-900/40'
+                          ? 'bg-green-900/20 text-green-500 border-green-500/30 hover:bg-green-900/40'
+                          : 'bg-yellow-900/20 text-yellow-500 border-yellow-500/30 hover:bg-yellow-900/40'
                           }`}
                       >
                         {form.acceptingResponses === false ? 'Start accepting' : 'Stop accepting'}
@@ -238,8 +244,8 @@ export default function FormsManagementPage() {
                       <button
                         onClick={() => togglePromote(form.id, form.promote)}
                         className={`px-3 py-1 rounded-md text-sm border ${form.promote
-                            ? 'bg-[#FB923C]/10 text-[#FB923C] border-[#FB923C]/30 hover:bg-[#FB923C]/20'
-                            : 'bg-white/5 text-[#FAFAFA]/70 border-white/10 hover:bg-white/10'
+                          ? 'bg-[#FB923C]/10 text-[#FB923C] border-[#FB923C]/30 hover:bg-[#FB923C]/20'
+                          : 'bg-white/5 text-[#FAFAFA]/70 border-white/10 hover:bg-white/10'
                           }`}
                         disabled={form.acceptingResponses === false}
                         title={form.acceptingResponses === false ? 'Enable accepting responses to promote' : undefined}

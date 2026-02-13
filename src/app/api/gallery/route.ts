@@ -3,12 +3,18 @@ import { appendItem, appendItems, getAllItems, saveAllItems } from "@/app/lib/ga
 import { s3, S3_BUCKET, S3_PUBLIC_BASEURL } from "@/app/lib/s3";
 import { DeleteObjectCommand, ListObjectsV2Command, ListObjectsV2CommandOutput } from "@aws-sdk/client-s3";
 import type { GalleryItem } from "@/app/types/gallery";
+import { getGalleryResult, setGalleryResult, invalidateGallery } from "@/app/lib/gallery-cache";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const category = searchParams.get("category") || undefined;
   const limit = parseInt(searchParams.get("limit") || "12", 10);
   const cursor = searchParams.get("cursor"); // cursor is an index offset string
+
+  // Try cache first
+  const cacheKey = `gallery:${category || 'all'}:${limit}:${cursor || '0'}`;
+  const cached = getGalleryResult(cacheKey);
+  if (cached) return NextResponse.json(cached);
 
   // Load current metadata
   let all = await getAllItems();
@@ -62,7 +68,7 @@ export async function GET(req: NextRequest) {
         }
 
         const ext = (filename.split(".").pop() || "").toLowerCase();
-        const typeGuess = typePart === "video" || ["mp4","mov","webm","mkv","m4v"].includes(ext)
+        const typeGuess = typePart === "video" || ["mp4", "mov", "webm", "mkv", "m4v"].includes(ext)
           ? "video" : "image";
         const createdAt = (obj.LastModified ? new Date(obj.LastModified).toISOString() : new Date().toISOString());
         const publicUrl = `${base}${base.endsWith("/") ? "" : "/"}${key}`;
@@ -85,7 +91,7 @@ export async function GET(req: NextRequest) {
       // Only add discovered items that don't already exist by URL to avoid duplicates
       const existingUrls = new Set(all.map(i => i.url));
       const newItems = discovered.filter(item => !existingUrls.has(item.url));
-      
+
       if (newItems.length > 0) {
         // Merge and sort newest-first by createdAt
         all = [...newItems, ...all].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -102,7 +108,9 @@ export async function GET(req: NextRequest) {
   const slice = filtered.slice(start, start + limit);
   const nextCursor = start + slice.length < filtered.length ? String(start + slice.length) : undefined;
 
-  return NextResponse.json({ items: slice, nextCursor });
+  const result = { items: slice, nextCursor };
+  setGalleryResult(cacheKey, result);
+  return NextResponse.json(result);
 }
 
 export async function POST(req: NextRequest) {
@@ -122,6 +130,7 @@ export async function POST(req: NextRequest) {
         it.createdAt = it.createdAt || new Date().toISOString();
       }
       await appendItems(items);
+      invalidateGallery();
       return NextResponse.json({ ok: true, count: items.length });
     }
 
@@ -134,7 +143,7 @@ export async function POST(req: NextRequest) {
 
       // Only delete from S3 if explicitly requested (to prevent accidental deletion)
       const deleteFromS3 = body?.deleteFromS3 === true;
-      
+
       if (deleteFromS3) {
         await Promise.all(
           toRemove
@@ -146,6 +155,7 @@ export async function POST(req: NextRequest) {
       const remaining = items.filter(i => !ids.includes(i.id));
       await saveAllItems(remaining);
 
+      invalidateGallery();
       return NextResponse.json({ ok: true, deleted: toRemove.length, remaining: remaining.length, deletedFromS3: deleteFromS3 });
     }
 
@@ -154,6 +164,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
     await appendItem({ ...item, createdAt: item.createdAt || new Date().toISOString() });
+    invalidateGallery();
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ error: "Failed to process request" }, { status: 500 });

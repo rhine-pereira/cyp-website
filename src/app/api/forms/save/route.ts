@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/app/lib/firebase-admin';
 import { createSpreadsheet, setSpreadsheetPermissions, addHeaders } from '@/app/lib/google-sheets';
 import { FormLayout } from '@/app/types/form';
+import { invalidateAll } from '@/app/lib/form-cache';
 
 // Hardcoded admin email for Google Sheets access
 const ADMIN_EMAIL = 'rhine.pereira@gmail.com'; // Replace with your actual email
@@ -9,10 +10,10 @@ const ADMIN_EMAIL = 'rhine.pereira@gmail.com'; // Replace with your actual email
 export async function POST(request: NextRequest) {
   try {
     const formData: FormLayout = await request.json();
-    
+
     // Generate form ID
     const formId = `form_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Create the form document in Firestore
     const formDoc = {
       ...formData,
@@ -22,21 +23,21 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    
+
     const db = getDb();
     await db.collection('forms').doc(formId).set(formDoc);
-    
+
     // Create Google Sheets spreadsheet
     const spreadsheet = await createSpreadsheet(formData.title);
     const spreadsheetId = spreadsheet.spreadsheetId;
-    
+
     if (!spreadsheetId) {
       throw new Error('Failed to create spreadsheet');
     }
-    
+
     // Set permissions for admin email
     await setSpreadsheetPermissions(spreadsheetId, ADMIN_EMAIL);
-    
+
     // Prepare headers for the spreadsheet (form fields first, then metadata)
     // Exclude 'admin-image' fields from headers so they don't create columns
     const headers = [
@@ -46,23 +47,26 @@ export async function POST(request: NextRequest) {
       'Timestamp',
       'IP Address'
     ];
-    
+
     // Add headers to the spreadsheet
     await addHeaders(spreadsheetId, headers);
-    
+
     // Update form document with spreadsheet ID
     await db.collection('forms').doc(formId).update({
       spreadsheetId,
       updatedAt: new Date(),
     });
-    
+
+    // Invalidate listing cache so the new form appears
+    invalidateAll();
+
     return NextResponse.json({
       success: true,
       formId,
       spreadsheetId,
       spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${spreadsheetId}`,
     });
-    
+
   } catch (error) {
     console.error('Error saving form:', error);
     return NextResponse.json(

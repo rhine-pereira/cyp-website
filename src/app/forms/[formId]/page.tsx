@@ -2,8 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/app/lib/firebase';
 import { FormLayout } from '@/app/types/form';
 import FormSubmission from '@/app/components/FormBuilder/FormSubmission';
 import Link from 'next/link';
@@ -30,27 +28,15 @@ export default function FormSubmissionPage() {
   useEffect(() => {
     const fetchForm = async () => {
       try {
-        const formRef = doc(db, 'forms', formId);
-        const formSnap = await getDoc(formRef);
+        const res = await fetch(`/api/forms/${formId}`, { cache: 'no-store' });
+        const json = await res.json();
 
-        if (formSnap.exists()) {
-          const data = formSnap.data();
-          const normalizeDate = (val: unknown): Date => {
-            if (!val) return new Date();
-            const maybeTs = val as { toDate?: () => Date };
-            if (typeof maybeTs?.toDate === 'function') return maybeTs.toDate();
-            if (val instanceof Date) return val;
-            if (typeof val === 'string' || typeof val === 'number') {
-              const d = new Date(val);
-              return isNaN(d.getTime()) ? new Date() : d;
-            }
-            return new Date();
-          };
+        if (json.success && json.form) {
+          const f = json.form;
           setForm({
-            id: formSnap.id,
-            ...data,
-            createdAt: normalizeDate(data.createdAt),
-            updatedAt: normalizeDate(data.updatedAt),
+            ...f,
+            createdAt: f.createdAt ? new Date(f.createdAt) : new Date(),
+            updatedAt: f.updatedAt ? new Date(f.updatedAt) : new Date(),
           } as FormLayout);
         } else {
           setError('Form not found');

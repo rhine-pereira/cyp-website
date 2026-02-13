@@ -1,6 +1,7 @@
-  import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getDb } from '@/app/lib/firebase-admin';
 import type { EventItem } from '@/app/types/event';
+import { getEventsList, setEventsList, invalidateEvents } from '@/app/lib/events-cache';
 
 function slugify(input: string): string {
   return input
@@ -16,6 +17,8 @@ export async function GET(request: Request) {
     const slug = searchParams.get('slug');
     const limitParam = parseInt(searchParams.get('limit') || '0', 10) || undefined;
     const db = getDb();
+
+    // Slug lookup bypasses cache (specific lookup requests)
     if (slug) {
       const snap = await db.collection('events').where('slug', '==', slug).get();
       const items: EventItem[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as EventItem[];
@@ -23,8 +26,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ items });
     }
 
-    const snap = await db.collection('events').orderBy('date', 'desc').get();
-    let items: EventItem[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as EventItem[];
+    // Try cache first for full listing
+    let allItems = getEventsList();
+    if (!allItems) {
+      const snap = await db.collection('events').orderBy('date', 'desc').get();
+      allItems = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as EventItem[];
+      setEventsList(allItems);
+    }
+
+    let items = allItems as EventItem[];
     if (limitParam && items.length > limitParam) items = items.slice(0, limitParam);
     return NextResponse.json({ items });
   } catch (e: any) {
@@ -67,7 +77,9 @@ export async function POST(request: Request) {
     if (body.headerImageKey) eventDoc.headerImageKey = body.headerImageKey;
     if (body.galleryCategory) eventDoc.galleryCategory = body.galleryCategory;
 
-  const ref = await db.collection('events').add(eventDoc as any);
+    const ref = await db.collection('events').add(eventDoc as any);
+    // Invalidate events cache so new event appears in listings
+    invalidateEvents();
     return NextResponse.json({ id: ref.id, ...eventDoc }, { status: 201 });
   } catch (e: any) {
     return NextResponse.json({ error: e.message || 'Failed to create event' }, { status: 500 });

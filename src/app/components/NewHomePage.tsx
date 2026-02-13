@@ -8,8 +8,7 @@ import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { FaInstagram, FaYoutube, FaChevronDown, FaChevronUp, FaHeart, FaComment, FaPlay } from 'react-icons/fa';
 import { Calendar, Users, Heart, Lightbulb, MapPin, Clock, Image as ImageIcon, ArrowRight, ChevronRight, Info, HelpCircle } from 'lucide-react';
-import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
-import { db } from '@/app/lib/firebase';
+// Promoted forms are now fetched from the cached /api/forms/list endpoint
 import type { FormLayout } from '@/app/types/form';
 import Spinner from './Spinner';
 
@@ -281,32 +280,20 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, [heroItems.length]);
 
-  // Data fetching (same as before)
+  // Data fetching — promoted forms from cached API
   useEffect(() => {
     const loadPromoted = async () => {
       try {
-        const formsRef = collection(db, 'forms');
-        const q = query(formsRef, where('promote', '==', true), orderBy('createdAt', 'desc'));
-        const snap = await getDocs(q);
-        const list: FormLayout[] = [];
-        snap.forEach((d) => {
-          const data = d.data();
-          // Simplified date logic for brevity
-          const toDate = (val: any) => val?.toDate ? val.toDate() : new Date();
-          const item: FormLayout = {
-            id: d.id,
-            title: String(data.title ?? 'Untitled'),
-            description: data.description,
-            fields: data.fields || [],
-            imageUrl: data.imageUrl,
-            createdAt: toDate(data.createdAt),
-            updatedAt: toDate(data.updatedAt),
-            spreadsheetId: data.spreadsheetId,
-            acceptingResponses: data.acceptingResponses,
-            promote: data.promote,
-          };
-          if (item.acceptingResponses !== false) list.push(item);
-        });
+        const res = await fetch('/api/forms/list');
+        if (!res.ok) throw new Error('Failed to load forms');
+        const data = await res.json();
+        const all: FormLayout[] = (data.forms || []).map((f: any) => ({
+          ...f,
+          createdAt: f.createdAt ? new Date(f.createdAt) : new Date(),
+          updatedAt: f.updatedAt ? new Date(f.updatedAt) : new Date(),
+        }));
+        // Filter for promoted + accepting forms
+        const list = all.filter(f => f.promote === true && f.acceptingResponses !== false);
         setPromoted(list);
       } catch (e) { console.error(e); }
       finally { setLoadingPromoted(false); }
